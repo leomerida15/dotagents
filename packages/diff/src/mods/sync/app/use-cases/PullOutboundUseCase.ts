@@ -1,0 +1,91 @@
+import type { IConfigRepository } from '@diff/mods/config/domain/ports/IConfigRepository';
+import type { Agent } from '@diff/mods/config/domain/entities/Agent';
+import type { IFileSystem } from '@diff/mods/sync/domain/ports/IFileSystem';
+import type { ISyncInterpreter } from '@diff/mods/sync/domain/ports/ISyncInterpreter';
+import { SyncResult } from '@diff/mods/sync/domain/value-objects/SyncResult';
+import { SyncAction } from '@diff/mods/sync/domain/entities/SyncAction';
+import { join } from 'node:path';
+import type { PullOutboundRequestDTO } from '@diff/mods/sync/app/dtos/PullOutboundRequestDTO';
+import type { SyncResultDTO } from '@diff/mods/sync/app/dtos/SyncResultDTO';
+import { SyncMapper } from '@diff/mods/sync/app/dtos/SyncMapper';
+
+export interface PullOutboundProps {
+    interpreter: ISyncInterpreter;
+    fileSystem: IFileSystem;
+    configRepository: IConfigRepository;
+}
+
+/**
+ * Use case to pull updates from the .ai bridge to a specific agent.
+ * Usually triggered when an agent becomes active and its files are outdated compared to the .ai bridge.
+ */
+export class PullOutboundUseCase {
+    private interpreter: ISyncInterpreter;
+    private fileSystem: IFileSystem;
+    private configRepository: IConfigRepository;
+
+    constructor({ interpreter, fileSystem, configRepository }: PullOutboundProps) {
+        this.interpreter = interpreter;
+        this.fileSystem = fileSystem;
+        this.configRepository = configRepository;
+    }
+
+    /**
+     * Executes the pull process from .ai standard to the agent's specific folder.
+     * @param request The agent ID and workspace root via DTO.
+     */
+    async execute({ agentId, workspaceRoot }: PullOutboundRequestDTO): Promise<SyncResultDTO> {
+        const startedAt = Date.now();
+        const allActions: SyncAction[] = [];
+
+        try {
+            // 1. Load current configuration
+            const configuration = await this.configRepository.load(workspaceRoot);
+            const agent = configuration.agents.find((a: Agent) => a.id === agentId);
+
+            if (!agent) {
+                throw new Error(`Agent with ID ${agentId} not found in configuration`);
+            }
+
+            // 2. Check if sync is actually needed using the manifest heartbeats
+            if (!configuration.manifest.needsSync(agentId)) {
+                return SyncMapper.toResultDTO(SyncResult.createSuccess([], startedAt));
+            }
+
+            // 3. Perform Outbound Sync: .ai Bridge -> Agent
+            const outboundActions = await this.processRules(
+                agent.outboundRules,
+                join(workspaceRoot, '.ai'),
+                join(workspaceRoot, agent.sourceRoot)
+            );
+            allActions.push(...outboundActions);
+
+            // 4. Mark agent as synced with the current state
+            configuration.manifest.markAsSynced(agentId);
+
+            // 5. Persist the updated state
+            await this.configRepository.save(configuration);
+
+            const result = SyncResult.createSuccess(allActions, startedAt);
+            return SyncMapper.toResultDTO(result);
+        } catch (error) {
+            const result = SyncResult.createFailure(error as Error, startedAt);
+            return SyncMapper.toResultDTO(result);
+        }
+    }
+
+    /**
+     * Resolves rules into actions and applies them to the file system.
+     */
+    private async processRules(rules: any[], sourceRoot: string, targetRoot: string): Promise<SyncAction[]> {
+        const executedActions: SyncAction[] = [];
+        for (const rule of rules) {
+            const actions = await this.interpreter.interpret(rule, { sourceRoot, targetRoot });
+            for (const action of actions) {
+                await action.execute(this.fileSystem);
+                executedActions.push(action);
+            }
+        }
+        return executedActions;
+    }
+}

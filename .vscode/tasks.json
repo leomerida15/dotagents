@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "bun: build vscode",
+            "type": "shell",
+            "command": "bun run build",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/vscode"
+            },
+            "group": "build",
+            "problemMatcher": "$tsc"
+        }
+    ]
+}
