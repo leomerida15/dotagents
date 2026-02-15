@@ -1,6 +1,7 @@
 ---
 trigger: always_on
 ---
+
 Este proyecto tiene como objetivo ser una herramienta para pasar entre un IDE (editor de codigo), extenciones para vscode y TUI (herramienta de terminal) con herramientas de AI a otros, esto lo hara sincronnizando los archvios del direntorio de ese entorno, este directorio es una carpeta especial que me permite definirle un entorno a al Agente de AI ingregrado en el IDE.
 
 Las herramientas conb las que partiremos seran.
@@ -60,7 +61,9 @@ cadauna de estas herramientas usa una directorio de configuracion el cual contie
 
 que partes tendra nuestro proyecto.
 
-1. sera un monorepo de bun.js administrado con bunstart y usaremos en directorio ./context para manejar persistencia de contexto en local.
-2. manejara arquitectura hexagonal de puertos y adaptadores.
-3. crearemos un package que maneje el core del motor de sincronizacion de directorios.
-4. tendremos dos apps para presentar esto 1. una extencion para vscode y 2. una cli.
+1. sera un monorepo de bun.js administrado con bunstart.
+2. usaremos el directorio `./context` para manejar la persistencia de contexto local del proyecto durante el desarrollo.
+3. definiremos el estándar `.agents/` como el **Puente Universal (Universal Bridge)** para la sincronización entre diferentes agentes de AI.
+4. manejara arquitectura hexagonal de puertos y adaptadores.
+5. crearemos un package que maneje el core del motor de sincronizacion de directorios.
+6. tendremos dos apps para presentar esto 1. una extencion para vscode y 2. una cli.

@@ -1,0 +1,24 @@
+import { InstalledRule } from '@rule/mods/client';
+import type { IInstalledRuleRepository } from '@rule/mods/client/app/ports/IInstalledRuleRepository';
+import type { InstalledRuleDTO } from '@rule/mods/client/app/dtos/InstalledRuleDTO';
+
+export class ListInstalledRulesUseCase {
+	constructor(private readonly repository: IInstalledRuleRepository) { }
+
+	async execute(): Promise<InstalledRuleDTO[]> {
+		const rules = await this.repository.getAllRules();
+		return rules.map(this.toDTO);
+	}
+
+	private toDTO(rule: InstalledRule): InstalledRuleDTO {
+		return {
+			id: rule.id.toString(),
+			name: rule.name,
+			mappings: {
+				inbound: rule.inbound.map((m) => ({ from: m.from, to: m.to, format: m.format })),
+				outbound: rule.outbound.map((m) => ({ from: m.from, to: m.to, format: m.format })),
+			},
+			installedAt: rule.installedAt.toISOString(),
+		};
+	}
+}

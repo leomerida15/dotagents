@@ -8,12 +8,9 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Extension "command-extension" is now active');
 
 	// Register Hello World command
-	let helloWorldDisposable = vscode.commands.registerCommand(
-		'extension.helloWorld',
-		() => {
-			vscode.window.showInformationMessage('Hello World from Command Extension!');
-		}
-	);
+	let helloWorldDisposable = vscode.commands.registerCommand('extension.helloWorld', () => {
+		vscode.window.showInformationMessage('Hello World from Command Extension!');
+	});
 
 	// Register Get User Input command
 	let getUserInputDisposable = vscode.commands.registerCommand(
@@ -27,13 +24,13 @@ export function activate(context: vscode.ExtensionContext) {
 						return 'Name must be at least 2 characters';
 					}
 					return undefined;
-				}
+				},
 			});
 
 			if (name) {
 				vscode.window.showInformationMessage(`Hello, ${name}!`);
 			}
-		}
+		},
 	);
 
 	// Add disposables to subscriptions for cleanup
@@ -47,4 +44,3 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
 	console.log('Extension "command-extension" is now deactivated');
 }
-

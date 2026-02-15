@@ -21,7 +21,17 @@ export * from './app/dtos/SyncProjectRequestDTO';
 export * from './app/dtos/SynchronizeAgentRequestDTO';
 export * from './app/dtos/PullOutboundRequestDTO';
 export * from './app/dtos/MappingRuleDTO';
-export * from './app/dtos/SyncMapper';
+
+// Application - Mappers
+export * from './app/mappers/SyncMapper';
+
+// Application - Exceptions
+export * from './app/exceptions/SyncExceptions';
+
+// Application - Ports
+export * from './app/ports/ISyncProject';
+export * from './app/ports/ISynchronizeAgent';
+export * from './app/ports/IPullOutbound';
 
 // Infrastructure - Adapters
 export * from './infra/adapters/BunFileSystem';

@@ -1,19 +1,27 @@
 {
-  "name": "dotai",
-  "type": "module",
-  "private": true,
-  "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "^5"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "dependencies": {
-    "zod": "^4.3.6"
-  }
+	"name": "dotagents",
+	"type": "module",
+	"private": true,
+	"devDependencies": {
+		"@types/bun": "latest",
+		"eslint": "^10.0.0",
+		"prettier": "^3.8.1",
+		"typescript": "^5",
+		"typescript-eslint": "^8.55.0"
+	},
+	"scripts": {
+		"format": "bun -b prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+		"lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+		"lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"dependencies": {
+		"zod": "^4.3.6"
+	}
 }

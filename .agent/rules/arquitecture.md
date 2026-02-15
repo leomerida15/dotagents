@@ -1,0 +1,55 @@
+---
+trigger: always_on
+---
+
+# Architecture Standards
+
+This project follows a strict architectural pattern based on the reference implementation in `packages/diff` and context organization in `context`.
+
+## 1. Code Architecture (Vertical Slices + Hexagonal)
+
+All packages and applications must follow the structure defined in `packages/diff`.
+
+### Structure
+
+- **Types**:
+  - `apps/` for end-user applications (CLI, VSCode extensions, etc.).
+  - `packages/` for reusable libraries and core logic.
+
+- **Internal Organization**:
+  - **Source Directory**: `src/`
+  - **Modules**: Business logic is divided into vertical slices under `src/mods/`.
+  - **Layers**: Each module MUST have the following layers:
+    - **domain/**: Enterprise logic, entities, value objects. No dependencies.
+    - **app/**: Application logic, use cases, ports. Depends on Domain.
+    - **infra/**: External adapters, repositories, implementations. Depends on Domain/App.
+
+### Example Structure
+
+```
+packages/<my-package>/src/
+  mods/
+    <my-module>/
+      domain/      # Entities, Value Objects
+      app/         # Use Cases, Ports
+      infra/       # Adapters, Repositories
+      index.ts     # Public Module API
+```
+
+## 2. Context Architecture
+
+Documentation and context must be organized mirroring the code structure, as seen in the `context` directory.
+
+### Structure
+
+- **Root**: `context/`
+- **Partitioning**:
+  - `context/pkg/<package-name>/` corresponds to `packages/<package-name>/`.
+  - `context/apps/<app-name>/` corresponds to `apps/<app-name>/`.
+
+- **Module Context**:
+  - Each code module inside `src/mods/` should have a corresponding markdown file in the context directory.
+  - Example: `packages/diff/src/mods/sync` -> `context/pkg/diff/sync.md`.
+
+- **General Context**:
+  - High-level documentation uses descriptive names like `what-it-is.md` or `readme.md`.

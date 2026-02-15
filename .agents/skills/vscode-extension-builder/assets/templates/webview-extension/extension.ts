@@ -7,12 +7,9 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Extension "webview-extension" is now active');
 
 	// Register command to open webview
-	let disposable = vscode.commands.registerCommand(
-		'extension.openWebview',
-		() => {
-			WebviewPanel.createOrShow(context.extensionUri);
-		}
-	);
+	let disposable = vscode.commands.registerCommand('extension.openWebview', () => {
+		WebviewPanel.createOrShow(context.extensionUri);
+	});
 
 	context.subscriptions.push(disposable);
 }
@@ -45,8 +42,8 @@ class WebviewPanel {
 			{
 				enableScripts: true,
 				retainContextWhenHidden: true,
-				localResourceRoots: [extensionUri]
-			}
+				localResourceRoots: [extensionUri],
+			},
 		);
 
 		WebviewPanel.currentPanel = new WebviewPanel(panel, extensionUri);
@@ -64,7 +61,7 @@ class WebviewPanel {
 
 		// Handle messages from the webview
 		this._panel.webview.onDidReceiveMessage(
-			message => {
+			(message) => {
 				switch (message.command) {
 					case 'alert':
 						vscode.window.showInformationMessage(message.text);
@@ -73,13 +70,13 @@ class WebviewPanel {
 						// Send data back to webview
 						this._panel.webview.postMessage({
 							command: 'updateData',
-							data: { message: 'Hello from extension!' }
+							data: { message: 'Hello from extension!' },
 						});
 						return;
 				}
 			},
 			null,
-			this._disposables
+			this._disposables,
 		);
 	}
 
@@ -105,10 +102,10 @@ class WebviewPanel {
 	private _getHtmlForWebview(webview: vscode.Webview): string {
 		// Get the local path to scripts and css
 		const scriptUri = webview.asWebviewUri(
-			vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js')
+			vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'),
 		);
 		const styleUri = webview.asWebviewUri(
-			vscode.Uri.joinPath(this._extensionUri, 'media', 'style.css')
+			vscode.Uri.joinPath(this._extensionUri, 'media', 'style.css'),
 		);
 
 		// Use a nonce to whitelist which scripts can be run
@@ -182,4 +179,3 @@ function getNonce(): string {
 export function deactivate() {
 	console.log('Extension "webview-extension" is now deactivated');
 }
-

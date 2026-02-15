@@ -1,0 +1,25 @@
+{
+	"name": "@dotagents/rule",
+	"module": "dist/index.js",
+	"type": "module",
+	"private": true,
+	"devDependencies": {
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"scripts": {
+		"build": "bun run -b bunstart.build.ts",
+		"watch": "bun run -b bunstart.watch.ts",
+		"dev": "bun run watch",
+		"start": "bun src/index.ts"
+	},
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"version": "0.0.1",
+	"dependencies": {
+		"@types/js-yaml": "^4.0.9",
+		"js-yaml": "^4.1.1"
+	}
+}

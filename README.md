@@ -1,4 +1,4 @@
-# dotai
+# dotagents
 
 To install dependencies:
 

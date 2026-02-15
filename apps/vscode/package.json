@@ -1,35 +1,38 @@
 {
-    "name": "dotai-vscode",
-    "displayName": "DotAI VSCode",
-    "description": "VSCode extension for DotAI context synchronization",
-    "version": "0.0.1",
-    "publisher": "snor",
-    "engines": {
-        "vscode": "^1.85.0"
-    },
-    "categories": [
-        "Other"
-    ],
-    "activationEvents": [],
-    "main": "./dist/extension.js",
-    "contributes": {
-        "commands": [
-            {
-                "command": "dotai-vscode.helloWorld",
-                "title": "DotAI: Hello World"
-            }
-        ]
-    },
-    "scripts": {
-        "vscode:prepublish": "bun run build",
-        "build": "bun build ./src/extension.ts --outdir ./dist --target node --external vscode",
-        "watch": "bun build ./src/extension.ts --outdir ./dist --target node --external vscode --watch",
-        "lint": "eslint src --ext ts",
-        "test": "node ./out/test/runTest.js"
-    },
-    "devDependencies": {
-        "@types/vscode": "^1.85.0",
-        "@types/node": "20.x",
-        "typescript": "^5.3.3"
-    }
+	"name": "@dotagents/vscode",
+	"displayName": "DotAgents VSCode",
+	"description": "VSCode extension for DotAgents context synchronization",
+	"version": "0.0.1",
+	"publisher": "snor",
+	"engines": {
+		"vscode": "^1.85.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [],
+	"main": "./dist/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "dotagents-vscode.helloWorld",
+				"title": "DotAgents: Hello World"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "bun run build",
+		"build": "bun build ./src/extension.ts --outdir ./dist --target node --external vscode",
+		"watch": "bun build ./src/extension.ts --outdir ./dist --target node --external vscode --watch",
+		"lint": "eslint src --ext ts",
+		"test": "node ./out/test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.85.0",
+		"@types/node": "20.x",
+		"typescript": "^5.3.3"
+	},
+	"dependencies": {
+		"@dotagents/diff": "workspace:*"
+	}
 }
