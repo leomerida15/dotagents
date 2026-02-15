@@ -12,6 +12,10 @@
             "outFiles": [
                 "${workspaceFolder}/apps/vscode/dist/**/*.js"
             ],
+            "env": {
+                "DOTAGENTS_RULE_SOURCE": "LOCAL",
+                "DOTAGENTS_LOCAL_PATH": "${workspaceFolder}/rules"
+            },
             "preLaunchTask": "bun: build vscode"
         }
     ]
