@@ -1,11 +1,11 @@
 import { IRuleRepository } from '../../application/ports/IRuleRepository';
 import { AgentRule } from '../../domain/entities/AgentRule';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import * as yaml from 'js-yaml';
 
-export class BunRuleRepository implements IRuleRepository {
-	constructor(private readonly storagePath: string) {}
+export class FsRuleRepository implements IRuleRepository {
+	constructor(private readonly storagePath: string) { }
 
 	async save(rule: AgentRule): Promise<void> {
 		const filePath = join(this.storagePath, `${rule.id.toString()}.yaml`);
@@ -26,6 +26,6 @@ export class BunRuleRepository implements IRuleRepository {
 			},
 		});
 
-		await Bun.write(filePath, yamlContent);
+		await writeFile(filePath, yamlContent, 'utf8');
 	}
 }

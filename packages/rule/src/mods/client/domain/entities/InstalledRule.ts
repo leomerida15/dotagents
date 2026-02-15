@@ -1,5 +1,5 @@
 import { AgentID } from '@rule/mods/client';
-import { MappingRule } from '../../../../shared/domain/value-objects/MappingRule';
+import { MappingRule } from '../../../../utils/domain/value-objects/MappingRule';
 
 interface InstalledRuleProps {
 	id: AgentID;

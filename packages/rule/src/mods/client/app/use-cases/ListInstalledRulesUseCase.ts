@@ -1,6 +1,6 @@
 import { InstalledRule } from '@rule/mods/client';
-import type { IInstalledRuleRepository } from '@rule/mods/client/app/ports/IInstalledRuleRepository';
-import type { InstalledRuleDTO } from '@rule/mods/client/app/dtos/InstalledRuleDTO';
+import { IInstalledRuleRepository } from '@rule/mods/client/app/ports/IInstalledRuleRepository';
+import { InstalledRuleDTO } from '@rule/mods/client/app/dtos/InstalledRuleDTO';
 
 export class ListInstalledRulesUseCase {
 	constructor(private readonly repository: IInstalledRuleRepository) { }

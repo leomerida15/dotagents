@@ -1,5 +1,5 @@
-import type { IInstalledRuleRepository } from '@rule/mods/client/app/ports/IInstalledRuleRepository';
-import { InstalledRule, AgentID, type InstalledRuleDTO } from '@rule/mods/client';
+import { IInstalledRuleRepository } from '@rule/mods/client/app/ports/IInstalledRuleRepository';
+import { InstalledRule, AgentID, InstalledRuleDTO } from '@rule/mods/client';
 
 export class GetInstalledRuleUseCase {
 	constructor(private readonly repository: IInstalledRuleRepository) { }

@@ -2,8 +2,8 @@ import { GetAgentRuleUseCase } from './application/use-cases/GetAgentRuleUseCase
 import { EnvConfigAdapter } from './infrastructure/config/EnvConfigAdapter';
 import { GitHubRuleProvider } from './infrastructure/providers/GitHubRuleProvider';
 import { LocalRuleProvider } from './infrastructure/providers/LocalRuleProvider';
-import { BunRuleRepository } from './infrastructure/repositories/BunRuleRepository';
-import { join } from 'path';
+import { FsRuleRepository } from './infrastructure/repositories/FsRuleRepository';
+import { join } from 'node:path';
 
 export class GetterModule {
 	/**
@@ -22,7 +22,7 @@ export class GetterModule {
 		// For now, we hardcode the storage path to .agents/.ai relative to CWD
 		// In a real app, this might also come from config
 		const storagePath = join(process.cwd(), '.agents', '.ai');
-		const ruleRepository = new BunRuleRepository(storagePath);
+		const ruleRepository = new FsRuleRepository(storagePath);
 
 		return new GetAgentRuleUseCase(
 			configService,

@@ -1,27 +1,28 @@
 import type { IRuleProvider } from '../../application/ports/IRuleProvider';
-import { AgentID } from '../../../../shared/domain/value-objects/AgentId';
+import { AgentID } from '../../../../utils/domain/value-objects/AgentId';
 import { AgentRule } from '../../domain/entities/AgentRule';
-import { RuleSource } from '../../../../shared/domain/value-objects/RuleSource';
-import { YamlMapper } from '../../../../shared/infrastructure/mappers/YamlMapper';
+import { RuleSource } from '../../../../utils/domain/value-objects/RuleSource';
+import { YamlMapper } from '../../../../utils/infra/mappers/YamlMapper';
 import * as yaml from 'js-yaml';
-import { join } from 'path';
+import { join } from 'node:path';
+import { readFile, access } from 'node:fs/promises';
 
 export class LocalRuleProvider implements IRuleProvider {
-	constructor(private readonly basePath: string) {}
+	constructor(private readonly basePath: string) { }
 
 	async getRule(agentId: AgentID): Promise<AgentRule | null> {
 		// e.g. .agent-rules/cursor.yaml
 		const filePath = join(this.basePath, `${agentId.toString()}.yaml`);
-		const file = Bun.file(filePath);
 
-		if (!(await file.exists())) {
+		try {
+			await access(filePath);
+			const content = await readFile(filePath, 'utf8');
+			const parsed = yaml.load(content);
+
+			const ruleData = YamlMapper.toDomain(parsed, RuleSource.Local(filePath));
+			return new AgentRule(ruleData);
+		} catch (error) {
 			return null;
 		}
-
-		const content = await file.text();
-		const parsed = yaml.load(content);
-
-		const ruleData = YamlMapper.toDomain(parsed, RuleSource.Local(filePath));
-		return new AgentRule(ruleData);
 	}
 }

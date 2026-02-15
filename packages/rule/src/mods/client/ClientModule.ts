@@ -1,7 +1,7 @@
 import { GetInstalledRuleUseCase } from './app/use-cases/GetInstalledRuleUseCase';
 import { ListInstalledRulesUseCase } from './app/use-cases/ListInstalledRulesUseCase';
-import { BunInstalledRuleRepository } from './infra/repo/BunInstalledRuleRepository';
-import { join } from 'path';
+import { FsInstalledRuleRepository } from './infra/repo/FsInstalledRuleRepository';
+import { join } from 'node:path';
 
 export class ClientModule {
 	/**
@@ -11,7 +11,7 @@ export class ClientModule {
 	 */
 	static createGetInstalledRuleUseCase(basePath?: string): GetInstalledRuleUseCase {
 		const path = basePath || join(process.cwd(), '.agents', '.ai');
-		const repository = new BunInstalledRuleRepository(path);
+		const repository = new FsInstalledRuleRepository(path);
 		return new GetInstalledRuleUseCase(repository);
 	}
 
@@ -22,7 +22,7 @@ export class ClientModule {
 	 */
 	static createListInstalledRulesUseCase(basePath?: string): ListInstalledRulesUseCase {
 		const path = basePath || join(process.cwd(), '.agents', '.ai');
-		const repository = new BunInstalledRuleRepository(path);
+		const repository = new FsInstalledRuleRepository(path);
 		return new ListInstalledRulesUseCase(repository);
 	}
 }

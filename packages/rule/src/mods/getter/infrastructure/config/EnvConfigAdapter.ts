@@ -1,5 +1,5 @@
 import { IGetterConfigService } from '../../application/ports/IGetterConfigService';
-import { RuleSourceType } from '../../../../shared/domain/value-objects/RuleSource';
+import { RuleSourceType } from '../../../../utils/domain/value-objects/RuleSource';
 
 export class EnvConfigAdapter implements IGetterConfigService {
 	getRuleSourceType(): RuleSourceType {

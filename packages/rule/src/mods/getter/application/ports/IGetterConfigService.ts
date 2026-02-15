@@ -1,4 +1,4 @@
-import { RuleSourceType } from '../../../../shared/domain/value-objects/RuleSource';
+import { RuleSourceType } from '../../../../utils/domain/value-objects/RuleSource';
 
 export interface IGetterConfigService {
 	getRuleSourceType(): RuleSourceType;

@@ -1,5 +1,5 @@
-import { AgentID } from '../../../../shared/domain/value-objects/AgentId';
-import { RuleSourceType } from '../../../../shared/domain/value-objects/RuleSource';
+import { AgentID } from '../../../../utils/domain/value-objects/AgentId';
+import { RuleSourceType } from '../../../../utils/domain/value-objects/RuleSource';
 import type { IGetterConfigService } from '../ports/IGetterConfigService';
 import type { IRuleProvider } from '../ports/IRuleProvider';
 import type { IRuleRepository } from '../ports/IRuleRepository';
@@ -13,7 +13,7 @@ export class GetAgentRuleUseCase {
 		private readonly githubProvider: IRuleProvider,
 		private readonly localProvider: IRuleProvider,
 		private readonly ruleRepository: IRuleRepository,
-	) {}
+	) { }
 
 	async execute(request: GetRuleRequestDTO): Promise<AgentRuleDTO> {
 		const agentId = new AgentID(request.agentId);

@@ -1,6 +1,6 @@
-import { AgentID } from '../../../../shared/domain/value-objects/AgentId';
-import { MappingRule } from '../../../../shared/domain/value-objects/MappingRule';
-import { RuleSource } from '../../../../shared/domain/value-objects/RuleSource';
+import { AgentID } from '../../../../utils/domain/value-objects/AgentId';
+import { MappingRule } from '../../../../utils/domain/value-objects/MappingRule';
+import { RuleSource } from '../../../../utils/domain/value-objects/RuleSource';
 
 interface AgentRuleProps {
 	id: AgentID;

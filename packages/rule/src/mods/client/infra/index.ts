@@ -1,1 +1,1 @@
-export * from './repo/BunInstalledRuleRepository';
+export * from './repo/FsInstalledRuleRepository';
