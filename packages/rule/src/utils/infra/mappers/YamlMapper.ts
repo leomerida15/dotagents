@@ -1,4 +1,5 @@
 import { AgentID } from '../../domain/value-objects/AgentId';
+import { UIMetadata } from '../../domain/value-objects/UIMetadata';
 import { MappingRule } from '../../domain/value-objects/MappingRule';
 import { RuleSource } from '../../domain/value-objects/RuleSource';
 
@@ -12,6 +13,11 @@ interface YamlRuleSchema {
 			inbound: Array<{ from: string; to: string; format?: string }>;
 			outbound: Array<{ from: string; to: string }>;
 		};
+		ui?: {
+			icon?: string;
+			color?: string;
+			description?: string;
+		};
 	};
 }
 
@@ -22,6 +28,7 @@ export interface ParsedRuleData {
 	inbound: MappingRule[];
 	outbound: MappingRule[];
 	source: RuleSource;
+	ui: UIMetadata;
 }
 
 export class YamlMapper {
@@ -44,6 +51,11 @@ export class YamlMapper {
 				(m) => new MappingRule(m.from, m.to),
 			),
 			source: source,
+			ui: new UIMetadata({
+				icon: schema.agent.ui?.icon,
+				color: schema.agent.ui?.color,
+				description: schema.agent.ui?.description,
+			}),
 		};
 	}
 }

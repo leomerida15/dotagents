@@ -1,2 +1,2 @@
-export * from '../../../../shared/domain/index';
+export * from '@rule/utils/domain/index';
 export * from './entities/AgentRule';

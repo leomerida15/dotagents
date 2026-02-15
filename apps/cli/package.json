@@ -1,0 +1,27 @@
+{
+  "name": "@dotagents/cli",
+  "module": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "dotagents": "dist/index.js"
+  },
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "build": "bun run -b bunstart.build.ts",
+    "watch": "bun run -b bunstart.watch.ts",
+    "dev": "bun run watch",
+    "start": "bun src/index.ts"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "version": "0.0.1",
+  "dependencies": {
+    "enquirer": "^2.4.1"
+  }
+}

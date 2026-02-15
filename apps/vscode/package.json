@@ -15,8 +15,13 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "dotagents-vscode.helloWorld",
-				"title": "DotAgents: Hello World"
+				"command": "dotagents-vscode.sync",
+				"title": "DotAgents: Synchronize Now",
+				"icon": "$(sync)"
+			},
+			{
+				"command": "dotagents-vscode.showMenu",
+				"title": "DotAgents: Show Menu"
 			}
 		]
 	},
@@ -33,6 +38,7 @@
 		"typescript": "^5.3.3"
 	},
 	"dependencies": {
-		"@dotagents/diff": "workspace:*"
+		"@dotagents/diff": "workspace:*",
+		"@dotagents/rule": "workspace:*"
 	}
 }

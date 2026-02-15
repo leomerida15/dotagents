@@ -18,6 +18,11 @@ export class ListInstalledRulesUseCase {
 				inbound: rule.inbound.map((m) => ({ from: m.from, to: m.to, format: m.format })),
 				outbound: rule.outbound.map((m) => ({ from: m.from, to: m.to, format: m.format })),
 			},
+			ui: {
+				icon: rule.ui.icon,
+				color: rule.ui.color,
+				description: rule.ui.description,
+			},
 			installedAt: rule.installedAt.toISOString(),
 		};
 	}

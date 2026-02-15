@@ -1,8 +1,8 @@
 import type { ISyncInterpreter } from '../../domain/ports/ISyncInterpreter';
-import { MappingRule, MappingFormat } from '../../../../config/domain/value-objects/MappingRule';
 import { SyncAction } from '../../domain/entities/SyncAction';
 import { ActionType } from '../../domain/value-objects/ActionType';
 import { join, isAbsolute } from 'path';
+import { MappingFormat, MappingRule } from '@diff/mods/config/domain/value-objects/MappingRule';
 
 /**
  * Default implementation of the Sync Interpreter that handles basic file and directory mapping.

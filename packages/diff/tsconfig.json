@@ -3,8 +3,15 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"paths": {
-			"@diff/*": ["./src/*"]
+			"@diff": [
+				"./src/index"
+			],
+			"@diff/*": [
+				"./src/*"
+			]
 		}
 	},
-	"include": ["src"]
+	"include": [
+		"src"
+	]
 }

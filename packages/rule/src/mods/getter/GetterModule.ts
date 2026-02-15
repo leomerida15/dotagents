@@ -1,9 +1,7 @@
-import { GetAgentRuleUseCase } from './application/use-cases/GetAgentRuleUseCase';
-import { EnvConfigAdapter } from './infrastructure/config/EnvConfigAdapter';
-import { GitHubRuleProvider } from './infrastructure/providers/GitHubRuleProvider';
-import { LocalRuleProvider } from './infrastructure/providers/LocalRuleProvider';
-import { FsRuleRepository } from './infrastructure/repositories/FsRuleRepository';
+
 import { join } from 'node:path';
+import { EnvConfigAdapter, FsRuleRepository, GitHubRuleProvider, LocalRuleProvider } from './infra';
+import { GetAgentRuleUseCase } from './application';
 
 export class GetterModule {
 	/**

@@ -13,6 +13,10 @@ version: "1.0"
 agent:
   id: "agent-unique-id" # e.g., cursor, claudecode, antigravity, cline
   name: "Human Readable Name"
+  ui:
+    icon: "gear"      # VSCode Codicon ID or emoji
+    color: "#3498db"  # Primary color for UI elements
+    description: "Brief description for lists and tooltips"
 
 # The relative base path where the agent stores its local settings
 source_root: ".agent-folder/" # Use "." if files are at the project root
