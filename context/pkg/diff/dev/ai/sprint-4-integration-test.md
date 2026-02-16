@@ -24,6 +24,7 @@ Este sprint se centra en validar todo el flujo end-to-end:
 - [x] Ejecutar script para sincronizar VSCode -> .agents -> VSCode.
 - [x] Validar que `.agents/.ai/state.json` contenga timestamps correctos.
 - [x] Verificar que no se sobrescriban cambios si el timestamp es más reciente en destino.
+- [x] Integrar `InitializeProjectUseCase` en la extensión de VSCode para crear `.agents/.ai` al inicio.
 
 ## Status
 

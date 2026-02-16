@@ -1,8 +1,14 @@
 {
+	"private": true,
+	"type": "module",
 	"name": "@dotagents/diff",
 	"module": "dist/index.js",
-	"type": "module",
-	"private": true,
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
 	"devDependencies": {
 		"@types/bun": "latest"
 	},

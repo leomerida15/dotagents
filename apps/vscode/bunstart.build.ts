@@ -1,4 +1,3 @@
-import bunPluginDts from 'bun-plugin-dts'
 
 /**
  * Build script: compiles TypeScript and emits declaration files.
@@ -6,28 +5,14 @@ import bunPluginDts from 'bun-plugin-dts'
 export async function build(): Promise<void> {
 	console.log('Building...');
 	await Bun.build({
-		entrypoints: ['src/index.ts'],
+		entrypoints: ['src/extension.ts'],
 		outdir: 'dist',
-		target: 'bun',
-		format: 'esm',
+		target: 'node',
+		format: 'cjs',
 		minify: false,
 		sourcemap: false,
-		plugins: [
-			bunPluginDts({
-				libraries: {
-					inlinedLibraries: [], // Don't inline anything to avoid pulling in node types incorrectly
-				},
-				compilationOptions: {
-					preferredConfigPath: './tsconfig.json',
-					followSymlinks: false,
-				},
-				output: {
-					noBanner: true,
-				},
-			})
-		],
+		external: ['vscode'],
 	});
-
 
 
 	console.log('Build completed');

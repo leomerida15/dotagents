@@ -19,6 +19,7 @@ export class GetInstalledRuleUseCase {
 		return {
 			id: rule.id.toString(),
 			name: rule.name,
+			sourceRoot: rule.sourceRoot,
 			mappings: {
 				inbound: rule.inbound.map((m) => ({ from: m.from, to: m.to, format: m.format })),
 				outbound: rule.outbound.map((m) => ({ from: m.from, to: m.to, format: m.format })),

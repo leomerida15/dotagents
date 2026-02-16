@@ -27,6 +27,7 @@ export class FsInstalledRuleRepository implements IInstalledRuleRepository {
 			return new InstalledRule({
 				id: ruleData.id,
 				name: ruleData.name,
+				sourceRoot: ruleData.sourceRoot,
 				inbound: ruleData.inbound,
 				outbound: ruleData.outbound,
 			});

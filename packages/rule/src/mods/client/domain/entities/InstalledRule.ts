@@ -5,6 +5,7 @@ import { UIMetadata } from '../../../../utils/domain/value-objects/UIMetadata';
 interface InstalledRuleProps {
 	id: AgentID;
 	name: string;
+	sourceRoot: string;
 	inbound: MappingRule[];
 	outbound: MappingRule[];
 	installedAt?: Date;
@@ -14,6 +15,7 @@ interface InstalledRuleProps {
 export class InstalledRule {
 	public readonly id: AgentID;
 	public readonly name: string;
+	public readonly sourceRoot: string;
 	public readonly inbound: MappingRule[];
 	public readonly outbound: MappingRule[];
 	public readonly installedAt: Date;
@@ -24,6 +26,7 @@ export class InstalledRule {
 
 		this.id = props.id;
 		this.name = props.name;
+		this.sourceRoot = props.sourceRoot || '.';
 		this.inbound = props.inbound;
 		this.outbound = props.outbound;
 		this.installedAt = props.installedAt || new Date();

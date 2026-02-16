@@ -1,6 +1,7 @@
 export interface InstalledRuleDTO {
 	id: string;
 	name: string;
+	sourceRoot: string;
 	mappings: {
 		inbound: { from: string; to: string; format?: string }[];
 		outbound: { from: string; to: string; format?: string }[];

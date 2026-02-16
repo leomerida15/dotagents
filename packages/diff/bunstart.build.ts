@@ -1,3 +1,5 @@
+import bunPluginDts from 'bun-plugin-dts'
+
 /**
  * Build script: compiles TypeScript and emits declaration files.
  */
@@ -10,6 +12,20 @@ export async function build(): Promise<void> {
 		format: 'esm',
 		minify: false,
 		sourcemap: false,
+		plugins: [
+			bunPluginDts({
+				libraries: {
+					inlinedLibraries: [], // Don't inline anything to avoid pulling in node types incorrectly
+				},
+				compilationOptions: {
+					preferredConfigPath: './tsconfig.json',
+					followSymlinks: false,
+				},
+				output: {
+					noBanner: true,
+				},
+			})
+		],
 	});
 
 	const proc = Bun.spawn(

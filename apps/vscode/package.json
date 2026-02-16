@@ -27,7 +27,7 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "bun run build",
-		"build": "bun build ./src/extension.ts --outdir ./dist --target node --external vscode",
+		"build": "bun run -b bunstart.build.ts",
 		"watch": "bun build ./src/extension.ts --outdir ./dist --target node --external vscode --watch",
 		"lint": "eslint src --ext ts",
 		"test": "node ./out/test/runTest.js"

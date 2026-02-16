@@ -3,6 +3,10 @@ import { StatusBarManager } from './mods/ui/infra/StatusBarManager';
 import { StartSyncOrchestration } from './mods/orchestrator/app/StartSyncOrchestration';
 import { AddAgentManually } from './mods/agent-bridge/app/AddAgentManually';
 import { DiffSyncAdapter } from './mods/orchestrator/infra/DiffSyncAdapter';
+import { NodeConfigRepository } from './mods/orchestrator/infra/NodeConfigRepository';
+import { GitHubRuleProvider } from './mods/orchestrator/infra/GitHubRuleProvider';
+import { FsAgentScanner } from './mods/orchestrator/infra/FsAgentScanner';
+import { InitializeProjectUseCase } from '@diff/mods/config/app/use-cases/InitializeProjectUseCase';
 
 /**
  * Entry point para la extensión DotAgents VSCode.
@@ -14,9 +18,23 @@ export function activate(context: vscode.ExtensionContext) {
 	// 1. Inicializar Infraestructura
 	const statusBar = new StatusBarManager({ context });
 	const syncEngine = new DiffSyncAdapter();
+	const configRepo = new NodeConfigRepository();
+	const ruleProvider = new GitHubRuleProvider();
+	const agentScanner = new FsAgentScanner();
 
 	// 2. Inicializar Casos de Uso
-	const startSync = new StartSyncOrchestration({ statusBar, syncEngine });
+	const initializeProject = new InitializeProjectUseCase({
+		configRepository: configRepo,
+		ruleProvider: ruleProvider,
+		agentScanner: agentScanner
+	});
+
+	const startSync = new StartSyncOrchestration({
+		statusBar,
+		syncEngine,
+		initializeProject,
+		configRepository: configRepo
+	});
 	const addAgent = new AddAgentManually({
 		onAgentAdded: async (agentId) => {
 			// Aquí se conectará con @dotagents/rule para persistir la regla

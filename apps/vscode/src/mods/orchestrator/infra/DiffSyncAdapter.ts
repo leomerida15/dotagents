@@ -1,9 +1,8 @@
+import { SyncProjectUseCase, DefaultSyncInterpreter } from '@dotagents/diff';
 import { IDiffSyncEngine } from '../app/ports/IDiffSyncEngine';
-import { SyncProjectUseCase } from '@diff/mods/sync/app/use-cases/SyncProjectUseCase';
-import { DefaultSyncInterpreter } from '@diff/mods/sync/infra/adapters/DefaultSyncInterpreter';
 import { NodeFileSystem } from './NodeFileSystem';
-import { ClientModule } from '@rule/mods/client';
 import { join } from 'node:path';
+import { ClientModule } from '@dotagents/rule';
 
 /**
  * Adapter that integrates @dotagents/diff and @dotagents/rule

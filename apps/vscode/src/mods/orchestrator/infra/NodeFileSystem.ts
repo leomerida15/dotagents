@@ -1,4 +1,4 @@
-import { IFileSystem } from '@diff/mods/sync/domain/ports/IFileSystem';
+import { IFileSystem } from '@dotagents/diff';
 import * as fs from 'node:fs/promises';
 import { dirname } from 'node:path';
 
