@@ -1,7 +1,7 @@
 
 import { join } from 'node:path';
 import { EnvConfigAdapter, FsRuleRepository, GitHubRuleProvider, LocalRuleProvider } from './infra';
-import { GetAgentRuleUseCase } from './application';
+import { GetAgentRuleUseCase } from './app';
 
 export class GetterModule {
 	/**

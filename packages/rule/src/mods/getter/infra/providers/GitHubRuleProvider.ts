@@ -1,4 +1,4 @@
-import type { IRuleProvider } from '../../application/ports/IRuleProvider';
+import type { IRuleProvider } from '../../app/ports/IRuleProvider';
 import { AgentID } from '../../../../utils/domain/value-objects/AgentId';
 import { AgentRule } from '../../domain/entities/AgentRule';
 import { RuleSource } from '../../../../utils/domain/value-objects/RuleSource';

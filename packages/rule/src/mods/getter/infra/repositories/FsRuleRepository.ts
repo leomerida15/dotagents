@@ -1,4 +1,4 @@
-import { IRuleRepository } from '../../application/ports/IRuleRepository';
+import { IRuleRepository } from '../../app/ports/IRuleRepository';
 import { AgentRule } from '../../domain/entities/AgentRule';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';

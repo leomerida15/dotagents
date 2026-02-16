@@ -1,0 +1,7 @@
+agent:
+  id: antigravity
+  name: Antigravity
+  source_root: .
+  mapping:
+    inbound: []
+    outbound: []
