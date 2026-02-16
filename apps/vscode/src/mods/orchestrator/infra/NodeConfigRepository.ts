@@ -27,11 +27,9 @@ export class NodeConfigRepository implements IConfigRepository {
 
     public async save(config: Configuration): Promise<void> {
         const agentsPath = join(config.workspaceRoot, this.DOT_AGENTS_FOLDER);
-        const aiPath = join(agentsPath, '.ai');
-        const syncPath = join(aiPath, this.SYNC_FILE);
+        const syncPath = join(agentsPath, this.SYNC_FILE);
 
         await mkdir(agentsPath, { recursive: true });
-        await mkdir(aiPath, { recursive: true });
 
         const data: PersistedConfigData = {
             manifest: config.manifest.toJSON(),
@@ -54,13 +52,13 @@ export class NodeConfigRepository implements IConfigRepository {
 
         await writeFile(syncPath, JSON.stringify(data, null, 2));
 
-        await mkdir(join(aiPath, 'rules'), { recursive: true });
-        await mkdir(join(aiPath, 'skills'), { recursive: true });
-        await mkdir(join(aiPath, 'mcp'), { recursive: true });
+        await mkdir(join(agentsPath, 'rules'), { recursive: true });
+        await mkdir(join(agentsPath, 'skills'), { recursive: true });
+        await mkdir(join(agentsPath, 'mcp'), { recursive: true });
     }
 
     public async load(workspaceRoot: string): Promise<Configuration> {
-        const syncPath = join(workspaceRoot, this.DOT_AGENTS_FOLDER, '.ai', this.SYNC_FILE);
+        const syncPath = join(workspaceRoot, this.DOT_AGENTS_FOLDER, this.SYNC_FILE);
 
         try {
             const fileContent = await readFile(syncPath, 'utf8');
@@ -94,7 +92,7 @@ export class NodeConfigRepository implements IConfigRepository {
      * Checks if the configuration exists.
      */
     public async exists(workspaceRoot: string): Promise<boolean> {
-        const syncPath = join(workspaceRoot, this.DOT_AGENTS_FOLDER, '.ai', this.SYNC_FILE);
+        const syncPath = join(workspaceRoot, this.DOT_AGENTS_FOLDER, this.SYNC_FILE);
         try {
             await readFile(syncPath);
             return true;

@@ -16,4 +16,11 @@ export interface IConfigRepository {
 	 * @returns The loaded configuration.
 	 */
 	load(workspaceRoot: string): Promise<Configuration>;
+
+	/**
+	 * Checks if a configuration exists for the project.
+	 * @param workspaceRoot - The workspace root to check.
+	 * @returns True if configuration exists, false otherwise.
+	 */
+	exists(workspaceRoot: string): Promise<boolean>;
 }

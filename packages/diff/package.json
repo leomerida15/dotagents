@@ -9,21 +9,23 @@
 			"types": "./dist/index.d.ts"
 		}
 	},
-	"devDependencies": {
-		"@types/bun": "latest"
-	},
-	"peerDependencies": {
-		"typescript": "^5"
-	},
 	"scripts": {
 		"build": "bun run -b bunstart.build.ts",
 		"watch": "bun run -b bunstart.watch.ts",
 		"dev": "bun run watch",
 		"start": "bun src/index.ts",
-		"types:check": "bun run -b tsc --noEmit",
-		"test": "bun run -b bunstart.test.ts"
+		"test": "vitest run",
+		"test:integration": "vitest run --testPathPattern=integration",
+		"types:check": "bun run -b tsc --noEmit"
 	},
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
-	"version": "0.0.1"
+	"version": "0.0.1",
+	"devDependencies": {
+		"@types/bun": "latest",
+		"vitest": "^1.2.0"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	}
 }

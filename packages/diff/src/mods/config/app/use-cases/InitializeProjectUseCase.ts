@@ -29,19 +29,21 @@ export class InitializeProjectUseCase {
 	 */
 	public async execute(input: InitializeProjectDTO): Promise<Configuration> {
 		const { workspaceRoot } = InitializeProjectSchema.parse(input);
-		// 1. Fetch master rules from GitHub
-		let masterRules;
-		try {
-			masterRules = await this.ruleProvider.fetchAgentDefinitions();
-		} catch (e: any) {
-			throw new RuleFetchException(e.message);
-		}
 
-		// 2. Scan project for agents that match master rules
-		const detectedAgents = await this.agentScanner.detectAgents(workspaceRoot);
+		let detectedAgents;
+		try {
+			detectedAgents = await this.agentScanner.detectAgents(workspaceRoot);
+		} catch (e: any) {
+			throw new Error(`Agent detection failed: ${e.message}`);
+		}
 
 		// 3. Create initial sync manifest
 		const manifest = SyncManifest.createEmpty();
+
+		// Register detected agents in manifest
+		for (const agent of detectedAgents) {
+			manifest.registerAgent(agent.id);
+		}
 
 		// 4. Create Configuration Aggregate
 		const config = Configuration.create({
@@ -50,7 +52,7 @@ export class InitializeProjectUseCase {
 			manifest,
 		});
 
-		// 5. Save the configuration (this will create .agents/sync.json)
+		// 5. Save the configuration (this will create .agents/state.json)
 		await this.configRepository.save(config);
 
 		return config;

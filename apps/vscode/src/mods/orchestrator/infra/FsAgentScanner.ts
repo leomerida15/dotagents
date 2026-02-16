@@ -1,69 +1,111 @@
 import { join } from 'node:path';
-import { readdir, stat } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { stat, readFile } from 'node:fs/promises';
 import { Agent, IAgentScanner } from '@dotagents/diff';
 
+interface UserAgentConfig {
+    include?: string[];
+    exclude?: string[];
+}
+
+interface KnownAgent {
+    id: string;
+    configPath: string; // Relative to home dir
+}
+
+const KNOWN_AGENTS: KnownAgent[] = [
+    { id: 'antigravity', configPath: '.gemini/antigravity' },
+    { id: 'cursor', configPath: '.cursor' },
+    { id: 'claude-code', configPath: '.claude' },
+    { id: 'cline', configPath: '.cline' },
+    { id: 'windsurf', configPath: '.codeium/windsurf' },
+    { id: 'openclaw', configPath: '.moltbot' },
+    { id: 'opencode', configPath: '.config/opencode' }
+];
+
 export class FsAgentScanner implements IAgentScanner {
+    private readonly homeDir: string;
+
+    constructor(homeDir?: string) {
+        this.homeDir = homeDir || homedir();
+    }
+
     async detectAgents(workspaceRoot: string): Promise<Agent[]> {
-        // Simple implementation:
-        // 1. Scan for packages/apps folders
-        // 2. If it has a package.json, consider it a potential agent source?
-        // OR: For now, we can just return a default agent if found, or empty.
-        // Let's implement a dummy scanner that returns the VSCode app itself as an agent if found, or scan `apps/` and `packages/`.
+        const detectedAgents: Agent[] = [];
+        const agentsMap = new Map<string, Agent>();
 
-        const agents: Agent[] = [];
-
-        // This logic is highly specific to the project structure.
-        // For this sprint, we might just want to return an empty list or detected "known" agents.
-        // Let's try to scan `apps` and `packages` dirs.
-
-        const dirsToScan = ['apps', 'packages'];
-
-        for (const dir of dirsToScan) {
-            const scanPath = join(workspaceRoot, dir);
+        // 1. Detect Installed Agents (Option B)
+        for (const known of KNOWN_AGENTS) {
+            const fullPath = join(this.homeDir, known.configPath);
             try {
-                const entries = await readdir(scanPath);
-                for (const entry of entries) {
-                    const fullPath = join(scanPath, entry);
-                    if ((await stat(fullPath)).isDirectory()) {
-                        // Assume it's an agent for now
-                        const agentId = entry; // e.g. "vscode", "diff"
+                if ((await stat(fullPath)).isDirectory()) {
+                    agentsMap.set(known.id, Agent.create({
+                        id: known.id,
+                        name: known.id,
+                        sourceRoot: fullPath,
+                        inbound: [],
+                        outbound: []
+                    }));
+                }
+            } catch {
+                // Ignore missing directories
+            }
+        }
 
-                        // We don't know rules yet, because rules come from the Provider (downloaded from centralized repo)
-                        // OR defined locally.
-                        // InitializeProjectUseCase: "Scan project for agents that match master rules"
-                        // So usually Scanner lists potential agents (paths), and logic matches them with Rules.
-                        // But `detectAgents` returns `Agent[]` which includes Rules.
-                        // Actually InitializeProjectUseCase logic:
-                        // 1. Fetch masterRules (Agent definitions).
-                        // 2. Detect agents.
+        // 2. Read User Config (Option A/C)
+        const configPath = join(workspaceRoot, '.agents', 'config.json');
+        let userConfig: UserAgentConfig = {};
+        try {
+            const content = await readFile(configPath, 'utf-8');
+            userConfig = JSON.parse(content);
+        } catch {
+            // Ignore missing or invalid config
+        }
 
-                        // Wait, looking at InitializeProjectUseCase.ts:
-                        // "const detectedAgents = await this.agentScanner.detectAgents(workspaceRoot);"
-                        // It doesn't pass masterRules to detectAgents.
-                        // So Scanner is responsible for finding Agents AND their rules?
-                        // If so, where does it get rules?
+        // 3. Apply Exclusions
+        if (userConfig.exclude) {
+            for (const excludedId of userConfig.exclude) {
+                agentsMap.delete(excludedId);
+            }
+        }
 
-                        // If we look at `InitializeProjectUseCase.ts`:
-                        // "masterRules = await this.ruleProvider.fetchAgentDefinitions();"
-                        // It fetches them but doesn't use `masterRules`. Unused variable?
+        // 4. Apply Inclusions (Custom or Forced)
+        if (userConfig.include) {
+            for (const includedId of userConfig.include) {
+                // If it's a known agent not detected, strictly we can't add it without sourceRoot.
+                // But if the user forces it, maybe they have it in a non-standard location?
+                // For MVP, we only support forcing KNOWN agents to be re-checked or just skipping if not found.
+                // Actually, "include" usually means "add even if not detected" but we need a path.
+                // Let's assume for now "include" is for agents that ARE detected but maybe were excluded,
+                // OR to support custom agents if we allowed specifying paths in config (which we don't yet).
+                // Re-reading plan: "Permitir al usuario forzar o excluir".
+                // If I force "cursor", I expect it to work.
+                // Implementation detail: If "include" lists a known agent, we assume standard path if not found?
+                // Or maybe simple logic: Just ensure if it WAS excluded, it's back?
+                // No, "include" might be for "I want this enabled".
+                // Let's keep it simple: "include" ensures it is present IF we can find a path.
+                // If we already detected it, it's there.
+                // If we didn't detect it, checking known array:
 
-                        // Let's assume Scanner should find valid Agents.
-                        // For the integration test, we might just want a dummy "demo-agent".
-
-                        agents.push(Agent.create({
-                            id: agentId,
-                            name: agentId,
-                            sourceRoot: join(dir, entry),
-                            inbound: [], // No rules by default
+                if (!agentsMap.has(includedId)) {
+                    const known = KNOWN_AGENTS.find(a => a.id === includedId);
+                    if (known) {
+                        const fullPath = join(this.homeDir, known.configPath);
+                        // Double check existence? Or trust user?
+                        // Better to trust user but maybe warn if path missing.
+                        // For now, let's try to add it with standard path.
+                        agentsMap.set(known.id, Agent.create({
+                            id: known.id,
+                            name: known.id,
+                            sourceRoot: fullPath,
+                            inbound: [],
                             outbound: []
                         }));
                     }
                 }
-            } catch (e) {
-                // Ignore if dir doesn't exist
             }
         }
 
-        return agents;
+        return Array.from(agentsMap.values());
     }
 }

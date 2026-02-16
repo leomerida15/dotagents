@@ -10,3 +10,13 @@ export * from './mods/config/domain/value-objects/MappingRule';
 
 // Export Sync Module
 export * from './mods/sync/index';
+
+// Export DTOs
+export * from './mods/config/app/dto/AgentConfig.dto';
+export * from './mods/config/app/dto/InitializeProject.dto';
+
+// Export Exceptions
+export * from './mods/config/app/exceptions/ConfigExceptions';
+
+// Export Use Cases
+export * from './mods/config/app/use-cases/InitializeProjectUseCase';
