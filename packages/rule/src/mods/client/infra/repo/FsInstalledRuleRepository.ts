@@ -8,7 +8,7 @@ import { YamlMapper } from 'src/utils/infra';
 import { RuleSourceType } from 'src/utils/domain';
 
 export class FsInstalledRuleRepository implements IInstalledRuleRepository {
-	constructor(private readonly basePath: string = join(process.cwd(), '.agents', '.ai')) { }
+	constructor(private readonly basePath: string = join(process.cwd(), '.agents', '.ai', 'rules')) { }
 
 	getRule(agentId: AgentID): InstalledRule | null {
 		const filePath = join(this.basePath, `${agentId.toString()}.yaml`);

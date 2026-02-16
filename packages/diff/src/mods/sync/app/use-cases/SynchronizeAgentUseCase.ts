@@ -34,7 +34,7 @@ export class SynchronizeAgentUseCase implements ISynchronizeAgent {
 	 * Executes the synchronization logic for a given agent.
 	 * @param request The agent ID and workspace root via DTO.
 	 */
-	async execute({ agentId, workspaceRoot }: SynchronizeAgentRequestDTO): Promise<SyncResultDTO> {
+	async execute({ agentId, workspaceRoot, force, enableDelete }: SynchronizeAgentRequestDTO): Promise<SyncResultDTO> {
 		const startedAt = Date.now();
 		const allActions: SyncAction[] = [];
 
@@ -52,13 +52,31 @@ export class SynchronizeAgentUseCase implements ISynchronizeAgent {
 				agent.inboundRules,
 				join(workspaceRoot, agent.sourceRoot),
 				join(workspaceRoot, '.agents'),
+				{
+					manifest: configuration.manifest,
+					force,
+					enableDelete,
+				},
 			);
 			allActions.push(...inboundActions);
 
-			// 3. Update Sync Manifest (Heartbeat) as per standard
+			// 3. Perform Outbound Sync: .agents Bridge -> Agent
+			const outboundActions = await this.processRules(
+				agent.outboundRules,
+				join(workspaceRoot, '.agents'),
+				join(workspaceRoot, agent.sourceRoot),
+				{
+					manifest: configuration.manifest,
+					force,
+					enableDelete,
+				},
+			);
+			allActions.push(...outboundActions);
+
+			// 4. Update Sync Manifest (Heartbeat) as per standard
 			configuration.manifest.markAsSynced(agentId);
 
-			// 4. Save updated configuration
+			// 5. Save updated configuration
 			await this.configRepository.save(configuration);
 
 			const result = SyncResult.createSuccess(allActions, startedAt);
@@ -76,10 +94,11 @@ export class SynchronizeAgentUseCase implements ISynchronizeAgent {
 		rules: any[],
 		sourceRoot: string,
 		targetRoot: string,
+		options: { manifest?: any; force?: boolean; enableDelete?: boolean },
 	): Promise<SyncAction[]> {
 		const executedActions: SyncAction[] = [];
 		for (const rule of rules) {
-			const actions = await this.interpreter.interpret(rule, { sourceRoot, targetRoot });
+			const actions = await this.interpreter.interpret(rule, { sourceRoot, targetRoot, ...options });
 			for (const action of actions) {
 				await action.execute(this.fileSystem);
 				executedActions.push(action);

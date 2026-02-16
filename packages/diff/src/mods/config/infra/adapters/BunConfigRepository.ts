@@ -25,7 +25,7 @@ export class BunConfigRepository implements IConfigRepository {
 
 	constructor({
 		dotAgentsFolder = '.agents',
-		syncFile = 'sync.json',
+		syncFile = 'state.json',
 	}: BunConfigRepositoryProps = {}) {
 		this.DOT_AGENTS_FOLDER = dotAgentsFolder;
 		this.SYNC_FILE = syncFile;
@@ -33,10 +33,14 @@ export class BunConfigRepository implements IConfigRepository {
 
 	public async save(config: Configuration): Promise<void> {
 		const agentsPath = join(config.workspaceRoot, this.DOT_AGENTS_FOLDER);
-		const syncPath = join(agentsPath, this.SYNC_FILE);
+		const aiPath = join(agentsPath, '.ai');
+		const syncPath = join(aiPath, this.SYNC_FILE);
 
 		// Create .agents folder if it doesn't exist
 		await mkdir(agentsPath, { recursive: true });
+
+		// Create .agents/.ai folder
+		await mkdir(aiPath, { recursive: true });
 
 		// Prepare data to save (Manifest + Agents)
 		const data: PersistedConfigData = {
@@ -61,13 +65,13 @@ export class BunConfigRepository implements IConfigRepository {
 		await writeFile(syncPath, JSON.stringify(data, null, 2));
 
 		// Ensure subfolders rules, skills, mcp exist
-		await mkdir(join(agentsPath, 'rules'), { recursive: true });
-		await mkdir(join(agentsPath, 'skills'), { recursive: true });
-		await mkdir(join(agentsPath, 'mcp'), { recursive: true });
+		await mkdir(join(aiPath, 'rules'), { recursive: true });
+		await mkdir(join(aiPath, 'skills'), { recursive: true });
+		await mkdir(join(aiPath, 'mcp'), { recursive: true });
 	}
 
 	public async load(workspaceRoot: string): Promise<Configuration> {
-		const syncPath = join(workspaceRoot, this.DOT_AGENTS_FOLDER, this.SYNC_FILE);
+		const syncPath = join(workspaceRoot, this.DOT_AGENTS_FOLDER, '.ai', this.SYNC_FILE);
 
 		try {
 			const fileContent = await readFile(syncPath, 'utf8');

@@ -41,6 +41,7 @@ export class BunFileSystem implements IFileSystem {
 	}
 
 	async copy(source: string, target: string): Promise<void> {
+		console.log(`[BunFileSystem] Copying ${source} to ${target}`);
 		const targetDir = dirname(target);
 		if (!(await this.exists(targetDir))) {
 			await this.mkdir(targetDir);
@@ -52,9 +53,11 @@ export class BunFileSystem implements IFileSystem {
 		} else {
 			await copyFile(source, target);
 		}
+		console.log(`[BunFileSystem] Copied ${source} to ${target}`);
 	}
 
 	async mkdir(path: string): Promise<void> {
+		// console.log(`[BunFileSystem] mkdir ${path}`);
 		await mkdir(path, { recursive: true });
 	}
 

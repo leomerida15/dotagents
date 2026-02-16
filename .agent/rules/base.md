@@ -6,7 +6,7 @@ Este proyecto tiene como objetivo ser una herramienta para pasar entre un IDE (e
 
 Las herramientas conb las que partiremos seran.
 
-IDE's: cursor, antigravity, scode.
+IDE's: cursor, antigravity, vscode.
 
 extenciones: kilocode, cline.
 
