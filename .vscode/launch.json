@@ -1,22 +1,21 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Launch Extension",
-            "type": "extensionHost",
-            "request": "launch",
-            "runtimeExecutable": "${execPath}",
-            "args": [
-                "--extensionDevelopmentPath=${workspaceFolder}/apps/vscode"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/apps/vscode/dist/**/*.js"
-            ],
-            "env": {
-                "DOTAGENTS_RULE_SOURCE": "LOCAL",
-                "DOTAGENTS_LOCAL_PATH": "${workspaceFolder}/rules"
-            },
-            "preLaunchTask": "bun: build vscode"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/apps/vscode",
+        "${workspaceFolder}/../supabase-kit"
+      ],
+      "outFiles": ["${workspaceFolder}/apps/vscode/dist/**/*.js"],
+      "env": {
+        "DOTAGENTS_RULE_SOURCE": "LOCAL",
+        "DOTAGENTS_LOCAL_PATH": "${workspaceFolder}/rules"
+      },
+      "preLaunchTask": "bun: build vscode"
+    }
+  ]
 }

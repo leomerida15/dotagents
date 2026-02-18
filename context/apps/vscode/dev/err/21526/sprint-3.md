@@ -87,9 +87,9 @@ async detectAgents(workspaceRoot: string): Promise<Agent[]> {
 - [x] Limpiar código comentado
 
 ### 5. Integrar con RuleProvider
-- [ ] Revisar cómo `InitializeProjectUseCase` usa `fetchAgentDefinitions()`
-- [ ] Determinar si el scanner debe usar las reglas maestras o son independientes
-- [ ] Documentar la relación entre scanner y provider
+- [x] Revisar cómo `InitializeProjectUseCase` usa `fetchAgentDefinitions()`
+- [x] Determinar si el scanner debe usar las reglas maestras o son independientes
+- [x] Documentar la relación entre scanner y provider
 
 ### 6. Actualizar la interfaz `IAgentScanner` si es necesario
 - [x] Verificar si la firma del método `detectAgents()` necesita cambios (No necesitó)

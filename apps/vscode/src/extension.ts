@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { StatusBarManager } from './mods/ui/infra/StatusBarManager';
 import { StartSyncOrchestration } from './mods/orchestrator/app/StartSyncOrchestration';
+import { FetchAndInstallRulesUseCase } from './mods/orchestrator/app/FetchAndInstallRulesUseCase';
 import { AddAgentManually } from './mods/agent-bridge/app/AddAgentManually';
 import { DiffSyncAdapter } from './mods/orchestrator/infra/DiffSyncAdapter';
 import { NodeConfigRepository } from './mods/orchestrator/infra/NodeConfigRepository';
@@ -29,11 +30,17 @@ export function activate(context: vscode.ExtensionContext) {
 		agentScanner: agentScanner
 	});
 
+	const fetchAndInstallRules = new FetchAndInstallRulesUseCase({
+		ruleProvider,
+		configRepository: configRepo
+	});
+
 	const startSync = new StartSyncOrchestration({
 		statusBar,
 		syncEngine,
 		initializeProject,
-		configRepository: configRepo
+		configRepository: configRepo,
+		fetchAndInstallRules
 	});
 	const addAgent = new AddAgentManually({
 		onAgentAdded: async (agentId) => {
@@ -69,8 +76,21 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(syncCommand, addAgentCommand, menuCommand);
 
-	// 4. Ejecutar sincronización inicial
-	startSync.execute();
+	// 4. Ejecutar sincronización inicial (cuando el workspace esté listo)
+	const runInitialSync = () => {
+		startSync.execute();
+	};
+	if (vscode.workspace.workspaceFolders?.length) {
+		runInitialSync();
+	} else {
+		const disposable = vscode.workspace.onDidChangeWorkspaceFolders(() => {
+			if (vscode.workspace.workspaceFolders?.length) {
+				disposable.dispose();
+				runInitialSync();
+			}
+		});
+		context.subscriptions.push(disposable);
+	}
 }
 
 export function deactivate() { }

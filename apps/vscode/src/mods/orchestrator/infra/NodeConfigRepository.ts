@@ -31,6 +31,10 @@ export class NodeConfigRepository implements IConfigRepository {
 
         await mkdir(agentsPath, { recursive: true });
 
+        // Create .agents/.ai for rule storage (used by @dotagents/rule)
+        await mkdir(join(agentsPath, '.ai'), { recursive: true });
+        await mkdir(join(agentsPath, '.ai', 'rules'), { recursive: true });
+
         const data: PersistedConfigData = {
             manifest: config.manifest.toJSON(),
             agents: config.agents.map((agent) => ({
@@ -86,6 +90,16 @@ export class NodeConfigRepository implements IConfigRepository {
             // But StartSync uses load.
             throw new Error(`Could not load configuration from ${syncPath}: ${error}`);
         }
+    }
+
+    /**
+     * Ensures .agents/.ai structure exists (for projects already initialized).
+     * Call before sync when .agents exists but .ai may not.
+     */
+    public async ensureAIStructure(workspaceRoot: string): Promise<void> {
+        const agentsPath = join(workspaceRoot, this.DOT_AGENTS_FOLDER);
+        await mkdir(join(agentsPath, '.ai'), { recursive: true });
+        await mkdir(join(agentsPath, '.ai', 'rules'), { recursive: true });
     }
 
     /**

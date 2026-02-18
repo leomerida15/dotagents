@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { stat, readFile } from 'node:fs/promises';
+import { stat, readFile, readdir } from 'node:fs/promises';
 import { Agent, IAgentScanner } from '@dotagents/diff';
 
 interface UserAgentConfig {
@@ -11,16 +11,17 @@ interface UserAgentConfig {
 interface KnownAgent {
     id: string;
     configPath: string; // Relative to home dir
+    workspaceMarker: string; // Dir name in workspace root (.cursor, .agent, etc.)
 }
 
 const KNOWN_AGENTS: KnownAgent[] = [
-    { id: 'antigravity', configPath: '.gemini/antigravity' },
-    { id: 'cursor', configPath: '.cursor' },
-    { id: 'claude-code', configPath: '.claude' },
-    { id: 'cline', configPath: '.cline' },
-    { id: 'windsurf', configPath: '.codeium/windsurf' },
-    { id: 'openclaw', configPath: '.moltbot' },
-    { id: 'opencode', configPath: '.config/opencode' }
+    { id: 'antigravity', configPath: '.gemini/antigravity', workspaceMarker: '.agent' },
+    { id: 'cursor', configPath: '.cursor', workspaceMarker: '.cursor' },
+    { id: 'claude-code', configPath: '.claude', workspaceMarker: '.claude' },
+    { id: 'cline', configPath: '.cline', workspaceMarker: '.cline' },
+    { id: 'windsurf', configPath: '.codeium/windsurf', workspaceMarker: '.windsurf' },
+    { id: 'openclaw', configPath: '.moltbot', workspaceMarker: '.moltbot' },
+    { id: 'opencode', configPath: '.config/opencode', workspaceMarker: '.opencode' }
 ];
 
 export class FsAgentScanner implements IAgentScanner {
@@ -31,11 +32,30 @@ export class FsAgentScanner implements IAgentScanner {
     }
 
     async detectAgents(workspaceRoot: string): Promise<Agent[]> {
-        const detectedAgents: Agent[] = [];
         const agentsMap = new Map<string, Agent>();
 
-        // 1. Detect Installed Agents (Option B)
+        // 1. Scan workspace for agent markers (priority: workspace-relative sourceRoot)
+        try {
+            const entries = await readdir(workspaceRoot, { withFileTypes: true });
+            const dirNames = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+            for (const known of KNOWN_AGENTS) {
+                if (dirNames.includes(known.workspaceMarker)) {
+                    agentsMap.set(known.id, Agent.create({
+                        id: known.id,
+                        name: known.id,
+                        sourceRoot: known.workspaceMarker,
+                        inbound: [],
+                        outbound: []
+                    }));
+                }
+            }
+        } catch {
+            // Ignore if workspace not readable
+        }
+
+        // 2. Detect installed agents in home (fallback if not in workspace)
         for (const known of KNOWN_AGENTS) {
+            if (agentsMap.has(known.id)) continue; // Prefer workspace over home
             const fullPath = join(this.homeDir, known.configPath);
             try {
                 if ((await stat(fullPath)).isDirectory()) {
@@ -52,7 +72,7 @@ export class FsAgentScanner implements IAgentScanner {
             }
         }
 
-        // 2. Read User Config (Option A/C)
+        // 3. Read User Config (Option A/C)
         const configPath = join(workspaceRoot, '.agents', 'config.json');
         let userConfig: UserAgentConfig = {};
         try {
@@ -62,14 +82,14 @@ export class FsAgentScanner implements IAgentScanner {
             // Ignore missing or invalid config
         }
 
-        // 3. Apply Exclusions
+        // 4. Apply Exclusions
         if (userConfig.exclude) {
             for (const excludedId of userConfig.exclude) {
                 agentsMap.delete(excludedId);
             }
         }
 
-        // 4. Apply Inclusions (Custom or Forced)
+        // 5. Apply Inclusions (Custom or Forced)
         if (userConfig.include) {
             for (const includedId of userConfig.include) {
                 // If it's a known agent not detected, strictly we can't add it without sourceRoot.

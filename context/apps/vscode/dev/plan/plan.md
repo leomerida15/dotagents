@@ -21,17 +21,17 @@ This plan outlines the milestones to finalize `apps/vscode`, integrating it with
 ---
 
 ## 🚀 Sprint 2: Environment Auto-Discovery
-**Status**: 🔵 To Do
+**Status**: 🟢 Completed
 
 - **Context**: The extension must detect installed agents without manual user intervention.
 - **Dependencies**: Sprint 1 (to be able to sync what is found).
 - **Steps to Execute**:
-    1. Create `EnvironmentDetector` to scan for folders like `.cursor/`, `.cline/`, `.agent/`.
-    2. Integrate scan results into the `AgentBridgeState`.
+    1. Create `EnvironmentDetector` to scan for folders like `.cursor/`, `.cline/`, `.agent/`. [x]
+    2. Integrate scan results into the `AgentBridgeState`. [x]
     3. Load icons, colors, and names dynamically from `@dotagents/rule` metadata.
 
 ### Checklist
-- [ ] Successful discovery of at least 3 common agents upon VSCode startup.
+- [x] Successful discovery of at least 3 common agents upon VSCode startup.
 - [ ] UI reflects detected agents with their respective corporate colors/icons.
 
 ---
@@ -53,7 +53,7 @@ This plan outlines the milestones to finalize `apps/vscode`, integrating it with
 ---
 
 ## 🚀 Sprint 4: Global Distribution & Skill Mode
-**Status**: 🔵 To Do
+**Status**: 🟡 In Progress
 
 - **Context**: Finalize connection with the rule repository and enable agent self-configuration.
 - **Dependencies**: All previous sprints.
@@ -63,5 +63,5 @@ This plan outlines the milestones to finalize `apps/vscode`, integrating it with
     3. Final UI/UX polish and timestamp conflict handling.
 
 ### Checklist
-- [ ] Manual agent list is fetched from Rule Repository (GitHub/Local).
+- [x] Manual agent list is fetched from Rule Repository (GitHub/Local).
 - [ ] Generated prompt includes correct instructions for AI self-configuration.

@@ -23,7 +23,7 @@ export class DiffSyncAdapter implements IDiffSyncEngine {
     async syncAll(workspaceRoot: string): Promise<void> {
         // 1. Get all installed rules using @dotagents/rule
         const listRules = ClientModule.createListInstalledRulesUseCase(
-            join(workspaceRoot, '.agents', '.ai'),
+            join(workspaceRoot, '.agents', '.ai', 'rules'),
         );
         const rules = await listRules.execute();
 

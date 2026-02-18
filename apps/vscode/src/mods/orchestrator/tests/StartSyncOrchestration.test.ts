@@ -20,6 +20,7 @@ describe("StartSyncOrchestration", () => {
     let mockSyncEngine: any;
     let mockInitializeProject: any;
     let mockConfigRepo: any;
+    let mockFetchAndInstallRules: any;
 
     beforeEach(async () => {
         // Dynamic import to ensure mock.module applies
@@ -29,13 +30,19 @@ describe("StartSyncOrchestration", () => {
         mockStatusBar = { update: mock(() => { }) };
         mockSyncEngine = { syncAll: mock(() => Promise.resolve()) };
         mockInitializeProject = { execute: mock(() => Promise.resolve()) };
-        mockConfigRepo = { exists: mock(() => Promise.resolve(false)) };
+        mockConfigRepo = {
+            exists: mock(() => Promise.resolve(false)),
+            load: mock(() => Promise.resolve({ agents: [] })),
+            ensureAIStructure: mock(() => Promise.resolve())
+        };
+        mockFetchAndInstallRules = { execute: mock(() => Promise.resolve()) };
 
         orchestration = new StartSyncOrchestration({
             statusBar: mockStatusBar,
             syncEngine: mockSyncEngine,
             initializeProject: mockInitializeProject,
-            configRepository: mockConfigRepo
+            configRepository: mockConfigRepo,
+            fetchAndInstallRules: mockFetchAndInstallRules
         });
     });
 
@@ -45,9 +52,8 @@ describe("StartSyncOrchestration", () => {
         await orchestration.execute();
 
         expect(mockConfigRepo.exists).toHaveBeenCalledWith("/mock/root");
-        expect(mockInitializeProject.execute).toHaveBeenCalled();
-        // Using objectContaining or exact match
         expect(mockInitializeProject.execute).toHaveBeenCalledWith({ workspaceRoot: "/mock/root", force: false });
+        expect(mockFetchAndInstallRules.execute).toHaveBeenCalledWith("/mock/root");
         expect(mockSyncEngine.syncAll).toHaveBeenCalled();
     });
 
@@ -58,6 +64,8 @@ describe("StartSyncOrchestration", () => {
 
         expect(mockConfigRepo.exists).toHaveBeenCalledWith("/mock/root");
         expect(mockInitializeProject.execute).not.toHaveBeenCalled();
+        expect(mockConfigRepo.ensureAIStructure).toHaveBeenCalledWith("/mock/root");
+        expect(mockFetchAndInstallRules.execute).toHaveBeenCalledWith("/mock/root");
         expect(mockSyncEngine.syncAll).toHaveBeenCalled();
     });
 });
