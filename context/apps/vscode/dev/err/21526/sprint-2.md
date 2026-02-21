@@ -4,7 +4,7 @@
 El adaptador `NodeConfigRepository` en la capa de infraestructura tiene rutas hardcodeadas que crean una subcarpeta `.ai` dentro de `.agents/`. Esto contradice el estándar del "Universal Bridge" donde la configuración debe residir directamente en `.agents/`.
 
 **Archivos Involucrados:**
-- `apps/vscode/src/mods/orchestrator/infra/NodeConfigRepository.ts`
+- `apps/vscode/src/modules/orchestrator/infra/NodeConfigRepository.ts`
 
 ---
 

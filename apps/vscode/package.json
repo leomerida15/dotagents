@@ -10,7 +10,9 @@
 	"categories": [
 		"Other"
 	],
-	"activationEvents": ["onStartupFinished"],
+	"activationEvents": [
+		"onStartupFinished"
+	],
 	"main": "./dist/extension.js",
 	"contributes": {
 		"commands": [
@@ -28,7 +30,22 @@
 				"title": "DotAgents: Add Agent/IDE Manually",
 				"icon": "$(plus)"
 			}
-		]
+		],
+		"configuration": {
+			"title": "DotAgents",
+			"properties": {
+				"dotagents.debug.logToFile": {
+					"type": "boolean",
+					"default": true,
+					"description": "When enabled, log messages are also written to a file in the workspace (see dotagents.debug.logFilePath)."
+				},
+				"dotagents.debug.logFilePath": {
+					"type": "string",
+					"default": "../dotagents/.agents/.ai/extension-debug.log",
+					"description": "Path relative to workspace root where debug log is written when logToFile is true."
+				}
+			}
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "bun run build",

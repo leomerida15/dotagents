@@ -18,6 +18,11 @@
 	"flow-icons.folders.associations": {
 		// Add or replace an icon for a folder name
 		".ai": "robot",
+		"skills": "constants",
+	},
+	"flow-icons.file.associations": {
+		// Add or replace an icon for a folder name
+		"mcp.json": "tools",
 	},
 	"cSpell.words": [
 		"supabase"

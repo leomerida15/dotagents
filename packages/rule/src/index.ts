@@ -1,2 +1,2 @@
-export * from './mods/getter/index';
-export * from './mods/client/index';
+export * from './modules/getter/index';
+export * from './modules/client/index';

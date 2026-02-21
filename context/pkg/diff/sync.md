@@ -1,4 +1,4 @@
-sync sera el motor de sincronizara que tiene como finalidad aplicar las reglas.
+diff sera el motor de sincronizara que tiene como finalidad aplicar las reglas.
 
 constara de dos sub modulos
 

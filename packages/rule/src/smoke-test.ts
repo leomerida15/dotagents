@@ -1,4 +1,4 @@
-import { GetterModule } from './mods/getter/GetterModule';
+import { GetterModule } from './modules/getter/GetterModule';
 import { AgentID } from './utils/domain/value-objects/AgentId';
 
 async function testFetch() {

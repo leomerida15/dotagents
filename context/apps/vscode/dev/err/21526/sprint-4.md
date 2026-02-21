@@ -4,10 +4,10 @@
 Los cambios realizados en el dominio (Sprint 1) y en la infraestructura (Sprints 2 y 3) requieren que se actualicen los DTOs (Data Transfer Objects), interfaces públicas, y contratos de los módulos para mantener la coherencia del sistema.
 
 **Archivos Involucrados:**
-- `packages/diff/src/mods/config/app/dto/InitializeProject.dto.ts`
-- `packages/diff/src/mods/config/domain/ports/IAgentScanner.ts`
-- `packages/diff/src/mods/config/domain/ports/IConfigRepository.ts`
-- `packages/diff/src/mods/config/app/use-cases/InitializeProjectUseCase.ts`
+- `packages/diff/src/modules/config/app/dto/InitializeProject.dto.ts`
+- `packages/diff/src/modules/config/domain/ports/IAgentScanner.ts`
+- `packages/diff/src/modules/config/domain/ports/IConfigRepository.ts`
+- `packages/diff/src/modules/config/app/use-cases/InitializeProjectUseCase.ts`
 - `packages/diff/src/index.ts` (exportaciones públicas)
 
 ---
@@ -138,19 +138,19 @@ export class ManifestInitializationException extends Error {
 
 ```typescript
 // Entities
-export { Configuration } from './mods/config/domain/entities/Configuration';
-export { SyncManifest } from './mods/config/domain/entities/SyncManifest';
-export { Agent } from './mods/config/domain/entities/Agent';
+export { Configuration } from './modules/config/domain/entities/Configuration';
+export { SyncManifest } from './modules/config/domain/entities/SyncManifest';
+export { Agent } from './modules/config/domain/entities/Agent';
 
 // DTOs
-export type { AgentConfigDTO, AgentTimestampDTO } from './mods/config/app/dto';
+export type { AgentConfigDTO, AgentTimestampDTO } from './modules/config/app/dto';
 
 // Ports
-export type { IAgentScanner } from './mods/config/domain/ports/IAgentScanner';
-export type { IConfigRepository } from './mods/config/domain/ports/IConfigRepository';
+export type { IAgentScanner } from './modules/config/domain/ports/IAgentScanner';
+export type { IConfigRepository } from './modules/config/domain/ports/IConfigRepository';
 
 // Use Cases
-export { InitializeProjectUseCase } from './mods/config/app/use-cases/InitializeProjectUseCase';
+export { InitializeProjectUseCase } from './modules/config/app/use-cases/InitializeProjectUseCase';
 ```
 
 ### 6. Actualizar la integración en VSCode Extension
@@ -160,7 +160,7 @@ export { InitializeProjectUseCase } from './mods/config/app/use-cases/Initialize
 - [ ] Actualizar los imports con los nuevos DTOs
 - [ ] Verificar que el flujo de inicialización funcione con los cambios
 
-#### `apps/vscode/src/mods/orchestrator/app/StartSyncOrchestration.ts`
+#### `apps/vscode/src/modules/orchestrator/app/StartSyncOrchestration.ts`
 - [ ] Actualizar para usar los nuevos contratos
 - [ ] Verificar que la lógica de verificación de configuración funcione
 

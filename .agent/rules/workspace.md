@@ -12,7 +12,7 @@ This file defines the context and standards for this specific workspace.
 The project structure is based on the pattern established in `packages/diff/src`. All packages and applications must adhere to the following directory layout:
 
 - `src/`: Root directory for all source code.
-- `src/mods/`: Contains separate modules, each implemented using its own local Hexagonal Architecture (Domain, Application, Infrastructure).
+- `src/modules/`: Contains separate modules, each implemented using its own local Hexagonal Architecture (Domain, Application, Infrastructure).
 - `src/utils/`: Shared utilities and helper functions used across multiple modules.
 - `src/access/`: Static assets and resources.
 - `dist/`: Output directory for compiled and packaged code.

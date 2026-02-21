@@ -18,7 +18,7 @@ All packages and applications must follow the structure defined in `packages/dif
 
 - **Internal Organization**:
   - **Source Directory**: `src/`
-  - **Modules**: Business logic is divided into vertical slices under `src/mods/`.
+  - **Modules**: Business logic is divided into vertical slices under `src/modules/`.
   - **Layers**: Each module MUST have the following layers:
     - **domain/**: Enterprise logic, entities, value objects. No dependencies.
     - **app/**: Application logic, use cases, ports. Depends on Domain.
@@ -28,7 +28,7 @@ All packages and applications must follow the structure defined in `packages/dif
 
 ```
 packages/<my-package>/src/
-  mods/
+  modules/
     <my-module>/
       domain/      # Entities, Value Objects
       app/         # Use Cases, Ports
@@ -48,8 +48,8 @@ Documentation and context must be organized mirroring the code structure, as see
   - `context/apps/<app-name>/` corresponds to `apps/<app-name>/`.
 
 - **Module Context**:
-  - Each code module inside `src/mods/` should have a corresponding markdown file in the context directory.
-  - Example: `packages/diff/src/mods/sync` -> `context/pkg/diff/sync.md`.
+  - Each code module inside `src/modules/` should have a corresponding markdown file in the context directory.
+  - Example: `packages/diff/src/modules/sync` -> `context/pkg/diff/sync.md`.
 
 - **General Context**:
   - High-level documentation uses descriptive names like `what-it-is.md` or `readme.md`.

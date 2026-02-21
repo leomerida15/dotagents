@@ -4,8 +4,8 @@
 El componente `FsAgentScanner` tiene una confusión conceptual fundamental: escanea las carpetas `apps/` y `packages/` del monorepo tratando cada subdirectorio como un "agente", cuando en realidad un agente debe representar una herramienta de IA/IDE (como Antigravity, Cursor, Claude Code).
 
 **Archivos Involucrados:**
-- `apps/vscode/src/mods/orchestrator/infra/FsAgentScanner.ts`
-- `packages/diff/src/mods/config/domain/ports/IAgentScanner.ts` (posible actualización de la interfaz)
+- `apps/vscode/src/modules/orchestrator/infra/FsAgentScanner.ts`
+- `packages/diff/src/modules/config/domain/ports/IAgentScanner.ts` (posible actualización de la interfaz)
 
 ---
 

@@ -41,7 +41,7 @@ describe('InitializeProjectUseCase - Integration', () => {
         await useCase.execute({ workspaceRoot: tempDir, force: false });
 
         // Verify .agents exists
-        const agentsPath = join(tempDir, '.agents');
+        const agentsPath = join(tempDir, '.agents', '.ai');
         const files = await readdir(agentsPath);
         expect(files).toContain('state.json');
         expect(files).toContain('rules');
@@ -52,7 +52,7 @@ describe('InitializeProjectUseCase - Integration', () => {
     it('debe generar state.json con la estructura correcta', async () => {
         await useCase.execute({ workspaceRoot: tempDir, force: false });
 
-        const statePath = join(tempDir, '.agents', 'state.json');
+        const statePath = join(tempDir, '.agents', '.ai', 'state.json');
         const content = await readFile(statePath, 'utf-8');
         const json = JSON.parse(content);
 

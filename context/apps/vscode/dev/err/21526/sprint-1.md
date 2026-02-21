@@ -4,7 +4,7 @@
 La entidad `SyncManifest` en la capa de dominio tiene una inicialización incorrecta del esquema de agentes. El método `createEmpty()` genera una estructura `{ agents: { agents: 0 } }` que no refleja el diseño esperado de un registro clave-valor donde cada clave es el nombre de un IDE/Agente.
 
 **Archivos Involucrados:**
-- `packages/diff/src/mods/config/domain/entities/SyncManifest.ts`
+- `packages/diff/src/modules/config/domain/entities/SyncManifest.ts`
 
 ---
 

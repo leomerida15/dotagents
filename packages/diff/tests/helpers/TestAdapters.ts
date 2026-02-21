@@ -15,14 +15,16 @@ export class TestConfigRepository implements IConfigRepository {
 
     async save(config: Configuration): Promise<void> {
         const agentsPath = join(config.workspaceRoot, '.agents');
+        const aiPath = join(agentsPath, '.ai');
         await mkdir(agentsPath, { recursive: true });
+        await mkdir(aiPath, { recursive: true });
 
         // Create aux directories
-        await mkdir(join(agentsPath, 'rules'), { recursive: true });
-        await mkdir(join(agentsPath, 'skills'), { recursive: true });
-        await mkdir(join(agentsPath, 'mcp'), { recursive: true });
+        await mkdir(join(aiPath, 'rules'), { recursive: true });
+        await mkdir(join(aiPath, 'skills'), { recursive: true });
+        await mkdir(join(aiPath, 'mcp'), { recursive: true });
 
-        const syncPath = join(agentsPath, this.SYNC_FILE);
+        const syncPath = join(aiPath, this.SYNC_FILE);
         const data = {
             workspaceRoot: config.workspaceRoot,
             agents: config.agents.map(a => ({
@@ -38,7 +40,7 @@ export class TestConfigRepository implements IConfigRepository {
     }
 
     async load(workspaceRoot: string): Promise<Configuration> {
-        const syncPath = join(workspaceRoot, '.agents', this.SYNC_FILE);
+        const syncPath = join(workspaceRoot, '.agents', '.ai', this.SYNC_FILE);
         const content = await readFile(syncPath, 'utf-8');
         const data = JSON.parse(content);
 
@@ -50,7 +52,7 @@ export class TestConfigRepository implements IConfigRepository {
 
     async exists(workspaceRoot: string): Promise<boolean> {
         try {
-            await stat(join(workspaceRoot, '.agents', this.SYNC_FILE));
+            await stat(join(workspaceRoot, '.agents', '.ai', this.SYNC_FILE));
             return true;
         } catch {
             return false;

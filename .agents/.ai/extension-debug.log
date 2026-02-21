@@ -1,0 +1,10 @@
+2026-02-21T23:33:01.611Z [INFO] DotAgents VSCode is now active
+2026-02-21T23:33:02.091Z [INFO] Migration: copying .agent → .agents/antigravity
+2026-02-21T23:33:02.951Z [INFO] Migration: copying .cursor → .agents/cursor
+2026-02-21T23:33:04.262Z [INFO] Migration: copied .agent → .agents/antigravity, .cursor → .agents/cursor
+2026-02-21T23:33:04.263Z [INFO] Project not initialized. Running initialization...
+2026-02-21T23:33:04.297Z [INFO] Initialization complete.
+2026-02-21T23:33:04.606Z [INFO] Installed rule for antigravity
+2026-02-21T23:33:04.841Z [INFO] Installed rule for cursor
+2026-02-21T23:33:05.683Z [WARN] Missing-rules detection or notification failed: ClientModule.createVerifyRulesExistenceUseCase is not a function
+2026-02-21T23:33:48.548Z [ERROR] Sync failed: {}

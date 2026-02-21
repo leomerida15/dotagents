@@ -41,13 +41,13 @@ graph TD
 
 ## Archivos Afectados
 
-### `packages/diff/src/mods/config/`
+### `packages/diff/src/modules/config/`
 - `domain/entities/SyncManifest.ts`
 - `app/use-cases/InitializeProjectUseCase.ts`
 - `domain/ports/IConfigRepository.ts`
 - `domain/ports/IAgentScanner.ts`
 
-### `apps/vscode/src/mods/orchestrator/`
+### `apps/vscode/src/modules/orchestrator/`
 - `infra/NodeConfigRepository.ts`
 - `infra/FsAgentScanner.ts`
 

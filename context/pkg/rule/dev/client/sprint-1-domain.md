@@ -10,11 +10,11 @@ El módulo `client` necesita conceptos que ya existen en `getter` (como `AgentID
 ## Steps to Execute
 
 ### 1. Refactor to Shared Kernel
-- Mover `AgentID`, `MappingRule`, `RuleSource` de `src/mods/getter/domain/value-objects` a `src/shared/domain/value-objects`.
+- Mover `AgentID`, `MappingRule`, `RuleSource` de `src/modules/getter/domain/value-objects` a `src/shared/domain/value-objects`.
 - Actualizar `getter` para importar desde `shared`.
 
 ### 2. Define Client Domain
-- Crear `InstalledRule` (Entity) en `src/mods/client/domain/entities`.
+- Crear `InstalledRule` (Entity) en `src/modules/client/domain/entities`.
     - Similar a `AgentRule` pero quizás enfocada en *lectura* y aplicación de reglas (inmutabilidad).
 
 ## Status Checklist

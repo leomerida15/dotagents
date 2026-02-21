@@ -4,7 +4,7 @@ La extensión de VSCode actúa como el "agente de campo" que monitorea el entorn
 
 ## 1. Estructura de Módulos (Vertical Slices)
 
-Siguiendo la arquitectura del proyecto, la lógica reside en `src/mods/`:
+Siguiendo la arquitectura del proyecto, la lógica reside en `src/modules/`:
 
 ### 📂 `orchestrator` (El cerebro)
 Gestiona el ciclo de vida de la sincronización y el estado global de la extensión.

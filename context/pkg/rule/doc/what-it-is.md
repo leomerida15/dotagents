@@ -4,7 +4,7 @@ Este paquete es el motor encargado de gestionar las reglas de sincronización qu
 
 ## Estructura de Módulos (Vertical Slices)
 
-El paquete se divide en dos módulos principales ubicados en `src/mods/`, cada uno siguiendo una arquitectura hexagonal (Domain, Application, Infrastructure):
+El paquete se divide en dos módulos principales ubicados en `src/modules/`, cada uno siguiendo una arquitectura hexagonal (Domain, Application, Infrastructure):
 
 ### 1. Módulo `getter`
 Responsable de la obtención y sincronización de reglas desde fuentes externas.

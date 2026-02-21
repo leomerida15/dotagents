@@ -17,14 +17,16 @@ class TestConfigRepository {
 
     async save(config: Configuration): Promise<void> {
         const agentsPath = join(config.workspaceRoot, '.agents');
+        const aiPath = join(agentsPath, '.ai');
         await mkdir(agentsPath, { recursive: true });
+        await mkdir(aiPath, { recursive: true });
 
         // Create aux directories
-        await mkdir(join(agentsPath, 'rules'), { recursive: true });
-        await mkdir(join(agentsPath, 'skills'), { recursive: true });
-        await mkdir(join(agentsPath, 'mcp'), { recursive: true });
+        await mkdir(join(aiPath, 'rules'), { recursive: true });
+        await mkdir(join(aiPath, 'skills'), { recursive: true });
+        await mkdir(join(aiPath, 'mcp'), { recursive: true });
 
-        const syncPath = join(agentsPath, this.SYNC_FILE);
+        const syncPath = join(aiPath, this.SYNC_FILE);
         const data = {
             workspaceRoot: config.workspaceRoot,
             agents: config.agents.map(a => ({
@@ -45,7 +47,7 @@ class TestConfigRepository {
 
     async exists(workspaceRoot: string): Promise<boolean> {
         try {
-            await stat(join(workspaceRoot, '.agents', this.SYNC_FILE));
+            await stat(join(workspaceRoot, '.agents', '.ai', this.SYNC_FILE));
             return true;
         } catch {
             return false;
@@ -113,12 +115,12 @@ async function runVerification() {
         await useCase.execute({ workspaceRoot: tempDir, force: false });
 
         // Verify .agents exists
-        const agentsFiles = await readdir(join(tempDir, '.agents'));
-        if (!agentsFiles.includes('state.json')) throw new Error('state.json missing');
-        console.log('✅ .agents structure created');
+        const aiFiles = await readdir(join(tempDir, '.agents', '.ai'));
+        if (!aiFiles.includes('state.json')) throw new Error('state.json missing');
+        console.log('✅ .agents/.ai structure created');
 
         // Verify content
-        const stateContent = await readFile(join(tempDir, '.agents', 'state.json'), 'utf-8');
+        const stateContent = await readFile(join(tempDir, '.agents', '.ai', 'state.json'), 'utf-8');
         const state = JSON.parse(stateContent);
 
         if (state.workspaceRoot !== tempDir) throw new Error('Workspace root mismatch');
@@ -129,14 +131,9 @@ async function runVerification() {
 
         console.log('--- Test 2: Regression Checks (#21526) ---');
 
-        // Check .ai folder
-        try {
-            await stat(join(tempDir, '.agents', '.ai'));
-            throw new Error('.agents/.ai folder SHOULD NOT exist');
-        } catch (e: any) {
-            if (e.code !== 'ENOENT') throw e;
-            console.log('✅ .agents/.ai does not exist');
-        }
+        // Check .ai folder exists
+        await stat(join(tempDir, '.agents', '.ai'));
+        console.log('✅ .agents/.ai exists');
 
         // Check agents list for false positives
         const agentIds = state.agents.map((a: any) => a.id);
