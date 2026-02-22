@@ -103,10 +103,12 @@ export class NodeConfigRepository implements IConfigRepository {
 
             const rawAgents = data.manifest?.agents ?? {};
             const manifestAgents = Object.fromEntries(
-                Object.entries(rawAgents).map(([key, val]) => [
-                    key,
-                    AgentTimestamp.create(val as { lastProcessedAt: number }),
-                ])
+                Object.entries(rawAgents)
+                    .filter(([key]) => key !== 'agents')
+                    .map(([key, val]) => [
+                        key,
+                        AgentTimestamp.create(val as { lastProcessedAt: number }),
+                    ])
             );
             const manifest = SyncManifest.create({
                 ...data.manifest,

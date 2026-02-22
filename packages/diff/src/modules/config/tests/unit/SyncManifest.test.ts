@@ -31,10 +31,8 @@ describe('SyncManifest - markAsSynced', () => {
         expect(manifest.currentAgent).toBe('antigravity');
         expect(manifest.lastActiveAgent).toBe('antigravity');
 
-        // Verificar que ambos timestamps son iguales
-        expect(json.agents['antigravity'].lastProcessedAt).toBe(
-            json.agents['agents'].lastProcessedAt
-        );
+        // Verificar que el timestamp del agente coincide con el bridge (lastProcessedAt)
+        expect(json.agents['antigravity'].lastProcessedAt).toBe(json.lastProcessedAt);
     });
 
     it('debe manejar múltiples agentes correctamente', () => {
@@ -53,9 +51,7 @@ describe('SyncManifest - markAsSynced', () => {
         expect(manifest.currentAgent).toBe('cursor');
         expect(json.agents['antigravity']).toBeDefined();
         expect(json.agents['cursor']).toBeDefined();
-        expect(json.agents['agents'].lastProcessedAt).toBe(
-            json.agents['cursor'].lastProcessedAt
-        );
+        expect(json.lastProcessedAt).toBe(json.agents['cursor'].lastProcessedAt);
     });
 
     it('debe actualizar currentAgent cada vez que se llama', () => {
@@ -80,11 +76,12 @@ describe('SyncManifest - needsSync', () => {
         expect(manifest.needsSync('antigravity')).toBe(false);
     });
 
-    it('debe retornar true cuando el bridge es más reciente', () => {
+    it('debe retornar true cuando el bridge es más reciente', async () => {
         const manifest = SyncManifest.createEmpty();
         manifest.markAsSynced('antigravity');
 
-        // Simular sincronización desde otro agente
+        // Simular sincronización desde otro agente (delay para timestamps distintos)
+        await new Promise((r) => setTimeout(r, 2));
         manifest.markAsSynced('cursor');
 
         // antigravity ahora está desactualizado
@@ -121,7 +118,7 @@ describe('SyncManifest - toJSON', () => {
 
         expect(typeof json.agents).toBe('object');
         expect(json.agents['antigravity']).toHaveProperty('lastProcessedAt');
-        expect(json.agents['agents']).toHaveProperty('lastProcessedAt');
+        expect(json).toHaveProperty('lastProcessedAt');
     });
 
     it('debe incluir currentAgent en la serialización', () => {
@@ -150,11 +147,10 @@ describe('SyncManifest - toJSON', () => {
 
         expect(json.agents['antigravity']).toHaveProperty('lastProcessedAt');
         expect(json.agents['cursor']).toHaveProperty('lastProcessedAt');
-        expect(json.agents['agents']).toHaveProperty('lastProcessedAt');
+        expect(json.agents).not.toHaveProperty('agents');
 
         expect(typeof json.agents['antigravity'].lastProcessedAt).toBe('number');
         expect(typeof json.agents['cursor'].lastProcessedAt).toBe('number');
-        expect(typeof json.agents['agents'].lastProcessedAt).toBe('number');
     });
 });
 

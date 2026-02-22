@@ -78,7 +78,7 @@ export class SyncManifest {
 	 * @returns true if the agent needs synchronization
 	 */
 	public needsSync(agentId: string): boolean {
-		const bridgeTimestamp = this.agentTimestamps['agents']?.lastProcessedAt || 0;
+		const bridgeTimestamp = this.lastProcessedAtValue;
 		const agentTimestamp = this.agentTimestamps[agentId]?.lastProcessedAt || 0;
 
 		// If .agents is newer than the agent, the agent needs an outbound sync.
@@ -100,9 +100,6 @@ export class SyncManifest {
 
 		// Set timestamp for the specific agent
 		this.agentTimestamps[agentId] = AgentTimestamp.create(timestamp);
-
-		// The bridge timestamp must match the active agent's timestamp
-		this.agentTimestamps['agents'] = AgentTimestamp.create(timestamp);
 	}
 
 	/**
@@ -134,10 +131,9 @@ export class SyncManifest {
 			lastActiveAgent: this.lastActiveAgentId,
 			currentAgent: this.currentAgentId,
 			agents: Object.fromEntries(
-				Object.entries(this.agentTimestamps).map(([key, timestamp]) => [
-					key,
-					timestamp.toJSON(),
-				])
+				Object.entries(this.agentTimestamps)
+					.filter(([key]) => key !== 'agents')
+					.map(([key, timestamp]) => [key, timestamp.toJSON()])
 			),
 		};
 	}

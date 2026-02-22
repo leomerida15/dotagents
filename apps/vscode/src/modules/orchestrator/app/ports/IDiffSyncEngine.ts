@@ -13,14 +13,16 @@ export interface IDiffSyncEngine {
      * @param workspaceRoot Root path of the current workspace.
      * @param agentId Agent ID to synchronize.
      * @param affectedPaths Optional list of absolute paths to sync incrementally.
+     * @returns Paths written by the sync (for IgnoredPathsRegistry).
      */
-    syncAgent(workspaceRoot: string, agentId: string, affectedPaths?: string[]): Promise<void>;
+    syncAgent(workspaceRoot: string, agentId: string, affectedPaths?: string[]): Promise<{ writtenPaths: string[] }>;
 
     /**
      * Syncs outbound from .agents bridge to the agent's folder.
      * @param workspaceRoot Root path of the current workspace.
      * @param agentId Agent ID to sync outbound.
      * @param affectedPaths Optional list of absolute paths to sync incrementally.
+     * @returns Paths written by the sync (for IgnoredPathsRegistry).
      */
-    syncOutboundAgent(workspaceRoot: string, agentId: string, affectedPaths?: string[]): Promise<void>;
+    syncOutboundAgent(workspaceRoot: string, agentId: string, affectedPaths?: string[]): Promise<{ writtenPaths: string[] }>;
 }

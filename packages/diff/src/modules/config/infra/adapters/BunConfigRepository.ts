@@ -4,6 +4,7 @@ import { constants } from 'node:fs';
 import { Configuration } from '../../domain/entities/Configuration';
 import { SyncManifest } from '../../domain/entities/SyncManifest';
 import { Agent } from '../../domain/entities/Agent';
+import { AgentTimestamp } from '../../domain/value-objects/AgentTimestamp';
 import { MappingRule } from '../../domain/value-objects/MappingRule';
 import type { IConfigRepository } from '../../domain/ports/IConfigRepository';
 
@@ -92,8 +93,20 @@ export class BunConfigRepository implements IConfigRepository {
 			const fileContent = await readFile(syncPath, 'utf8');
 			const data = JSON.parse(fileContent) as PersistedConfigData;
 
-			// Reconstruct manifest
-			const manifest = SyncManifest.create(data.manifest);
+			// Reconstruct manifest (filter 'agents' key for backward compatibility)
+			const rawAgents = data.manifest?.agents ?? {};
+			const manifestAgents = Object.fromEntries(
+				Object.entries(rawAgents)
+					.filter(([key]) => key !== 'agents')
+					.map(([key, val]) => [
+						key,
+						AgentTimestamp.create(val as { lastProcessedAt: number }),
+					])
+			);
+			const manifest = SyncManifest.create({
+				...data.manifest,
+				agents: manifestAgents,
+			});
 
 			// Reconstruct agents
 			const agents = (data.agents || []).map((agentProps) => {

@@ -80,20 +80,22 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
         }
     }
 
-    async syncAgent(workspaceRoot: string, agentId: string, affectedPaths?: string[]): Promise<void> {
+    async syncAgent(workspaceRoot: string, agentId: string, affectedPaths?: string[]): Promise<{ writtenPaths: string[] }> {
         const listRules = ClientModule.createListInstalledRulesUseCase(
             join(workspaceRoot, '.agents', '.ai', 'rules'),
         );
         const rules = await listRules.execute();
         const rule = rules.find((item) => item.id === agentId);
 
+        let writtenPaths: string[] = [];
         if (rule) {
-            await this.syncProject.execute({
+            const result = await this.syncProject.execute({
                 rules: rule.mappings.inbound,
                 sourcePath: join(workspaceRoot, rule.sourceRoot),
                 targetPath: join(workspaceRoot, '.agents'),
                 ...(affectedPaths && affectedPaths.length > 0 ? { affectedPaths } : {}),
             });
+            writtenPaths = this.extractWrittenPaths(result);
         }
 
         try {
@@ -105,22 +107,25 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
             if (this.logger) this.logger.error('[DiffSyncAdapter] Failed to update manifest currentAgent:', e);
             else console.error('[DiffSyncAdapter] Failed to update manifest currentAgent:', e);
         }
+        return { writtenPaths };
     }
 
-    async syncOutboundAgent(workspaceRoot: string, agentId: string, affectedPaths?: string[]): Promise<void> {
+    async syncOutboundAgent(workspaceRoot: string, agentId: string, affectedPaths?: string[]): Promise<{ writtenPaths: string[] }> {
         const listRules = ClientModule.createListInstalledRulesUseCase(
             join(workspaceRoot, '.agents', '.ai', 'rules'),
         );
         const rules = await listRules.execute();
         const rule = rules.find((item) => item.id === agentId);
 
+        let writtenPaths: string[] = [];
         if (rule && rule.mappings.outbound?.length) {
-            await this.syncProject.execute({
+            const result = await this.syncProject.execute({
                 rules: rule.mappings.outbound,
                 sourcePath: join(workspaceRoot, '.agents'),
                 targetPath: join(workspaceRoot, rule.sourceRoot),
                 ...(affectedPaths && affectedPaths.length > 0 ? { affectedPaths } : {}),
             });
+            writtenPaths = this.extractWrittenPaths(result);
         }
 
         try {
@@ -132,5 +137,14 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
             if (this.logger) this.logger.error('[DiffSyncAdapter] Failed to update manifest after syncOutboundAgent:', e);
             else console.error('[DiffSyncAdapter] Failed to update manifest after syncOutboundAgent:', e);
         }
+        return { writtenPaths };
+    }
+
+    private extractWrittenPaths(result: SyncResultDTO): string[] {
+        const paths: string[] = [];
+        for (const action of result.actionsPerformed) {
+            if (action.target) paths.push(action.target);
+        }
+        return paths;
     }
 }

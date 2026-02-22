@@ -15,6 +15,7 @@ import { FsAgentScanner } from './modules/orchestrator/infra/FsAgentScanner';
 import { ExtensionLogger } from './modules/orchestrator/infra/ExtensionLogger';
 import { IdeWatcherService } from './modules/orchestrator/infra/IdeWatcherService';
 import { AgentsWatcherService } from './modules/orchestrator/infra/AgentsWatcherService';
+import { IgnoredPathsRegistry } from './modules/orchestrator/infra/IgnoredPathsRegistry';
 import { detectAgentFromHostApp } from './modules/orchestrator/infra/AgentHostDetector';
 import { debounce } from './modules/orchestrator/utils/debounce';
 import { InitializeProjectUseCase } from '@dotagents/diff';
@@ -50,6 +51,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const inboundAffectedPaths = new Set<string>();
 	const outboundAffectedPaths = new Set<string>();
+	const ignoredPaths = new IgnoredPathsRegistry();
+	const COOLDOWN_MS = 300;
+	let inboundCooldownUntil = 0;
+	let outboundCooldownUntil = 0;
 
 	const runReactiveInboundSync = debounce(async () => {
 		const paths = [...inboundAffectedPaths];
@@ -66,7 +71,9 @@ export function activate(context: vscode.ExtensionContext) {
 				statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${activeAgentId}`);
 				return;
 			}
-			await syncEngine.syncAgent(workspaceRoot, activeAgentId, paths.length ? paths : undefined);
+			const { writtenPaths } = await syncEngine.syncAgent(workspaceRoot, activeAgentId, paths.length ? paths : undefined);
+			ignoredPaths.add(writtenPaths);
+			outboundCooldownUntil = Date.now() + COOLDOWN_MS;
 		} catch (e) {
 			logger.error('Reactive inbound sync failed:', e);
 		}
@@ -87,17 +94,23 @@ export function activate(context: vscode.ExtensionContext) {
 				statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${activeAgentId}`);
 				return;
 			}
-			await syncEngine.syncOutboundAgent(workspaceRoot, activeAgentId, paths.length ? paths : undefined);
+			const { writtenPaths } = await syncEngine.syncOutboundAgent(workspaceRoot, activeAgentId, paths.length ? paths : undefined);
+			ignoredPaths.add(writtenPaths);
+			inboundCooldownUntil = Date.now() + COOLDOWN_MS;
 		} catch (e) {
 			logger.error('Reactive outbound sync failed:', e);
 		}
 	}, 400);
 
 	const scheduleInboundSync = (uri: vscode.Uri) => {
+		if (ignoredPaths.shouldIgnore(uri.fsPath)) return;
+		if (Date.now() < inboundCooldownUntil) return;
 		inboundAffectedPaths.add(uri.fsPath);
 		runReactiveInboundSync();
 	};
 	const scheduleOutboundSync = (uri: vscode.Uri) => {
+		if (ignoredPaths.shouldIgnore(uri.fsPath)) return;
+		if (Date.now() < outboundCooldownUntil) return;
 		outboundAffectedPaths.add(uri.fsPath);
 		runReactiveOutboundSync();
 	};
