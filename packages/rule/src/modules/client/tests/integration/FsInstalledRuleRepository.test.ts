@@ -4,6 +4,7 @@ import { rm, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { FsInstalledRuleRepository } from '../../infra';
 import { AgentID } from '@rule/utils/domain';
+import { ClientModule } from '../../ClientModule';
 
 describe('FsInstalledRuleRepository Integration Test', () => {
   const TEST_AI_PATH = join(process.cwd(), '.agents', '.ai', 'rules');
@@ -107,5 +108,63 @@ target_standard: ".agents/"
     const exists = repo.existsRule(new AgentID('exists-agent'));
 
     expect(exists).toBe(true);
+  });
+
+  it('should parse source_ext and target_ext for format conversion', async () => {
+    const ruleContent = `
+version: "1.0"
+agent: { id: "conv-agent", name: "Conversion Agent" }
+source_root: ".cursor/"
+mapping:
+  inbound:
+    - from: "rules/"
+      to: "rules/"
+      format: "directory"
+      source_ext: ".mdc"
+      target_ext: ".md"
+  outbound:
+    - from: "rules/"
+      to: "rules/"
+      format: "directory"
+      source_ext: ".md"
+      target_ext: ".mdc"
+target_standard: ".agents/"
+`;
+    await writeFile(join(TEST_AI_PATH, 'conv-agent.yaml'), ruleContent);
+
+    const repo = new FsInstalledRuleRepository(TEST_AI_PATH);
+    const rule = repo.getRule(new AgentID('conv-agent'));
+
+    expect(rule).not.toBeNull();
+    expect(rule!.inbound[0].sourceExt).toBe('.mdc');
+    expect(rule!.inbound[0].targetExt).toBe('.md');
+    expect(rule!.outbound[0].sourceExt).toBe('.md');
+    expect(rule!.outbound[0].targetExt).toBe('.mdc');
+  });
+
+  it('should include sourceExt/targetExt in ListInstalledRulesUseCase DTO', async () => {
+    const ruleContent = `
+version: "1.0"
+agent: { id: "dto-agent", name: "DTO Agent" }
+source_root: "./"
+mapping:
+  inbound:
+    - from: "rules/"
+      to: "rules/"
+      format: "directory"
+      source_ext: ".mdc"
+      target_ext: ".md"
+  outbound: []
+target_standard: ".agents/"
+`;
+    await writeFile(join(TEST_AI_PATH, 'dto-agent.yaml'), ruleContent);
+
+    const listRules = ClientModule.createListInstalledRulesUseCase(TEST_AI_PATH);
+    const rules = await listRules.execute();
+    const rule = rules.find((r) => r.id === 'dto-agent');
+
+    expect(rule).toBeDefined();
+    expect(rule!.mappings.inbound[0].sourceExt).toBe('.mdc');
+    expect(rule!.mappings.inbound[0].targetExt).toBe('.md');
   });
 });

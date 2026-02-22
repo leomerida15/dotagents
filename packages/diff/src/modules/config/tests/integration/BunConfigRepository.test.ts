@@ -58,6 +58,41 @@ describe('BunConfigRepository Integration Test', () => {
 		expect(loadedConfig.manifest.lastActiveAgent).toBe('none');
 	});
 
+	it('should persist and load rules with format conversion (sourceExt/targetExt)', async () => {
+		const repo = new BunConfigRepository();
+
+		const manifest = SyncManifest.createEmpty();
+		const rule = MappingRule.create({
+			from: 'rules/',
+			to: 'rules/',
+			format: MappingFormat.DIRECTORY,
+			sourceExt: '.mdc',
+			targetExt: '.md',
+		});
+
+		const agent = Agent.create({
+			id: 'cursor',
+			name: 'Cursor',
+			sourceRoot: '.cursor',
+			inbound: [rule],
+			outbound: [rule],
+		});
+
+		const config = Configuration.create({
+			workspaceRoot: TEST_WORKSPACE,
+			agents: [agent],
+			manifest,
+		});
+
+		await repo.save(config);
+		const loadedConfig = await repo.load(TEST_WORKSPACE);
+
+		expect(loadedConfig.agents[0]!.inboundRules[0]!.sourceExt).toBe('.mdc');
+		expect(loadedConfig.agents[0]!.inboundRules[0]!.targetExt).toBe('.md');
+		expect(loadedConfig.agents[0]!.outboundRules[0]!.sourceExt).toBe('.mdc');
+		expect(loadedConfig.agents[0]!.outboundRules[0]!.targetExt).toBe('.md');
+	});
+
 	it('should throw an error when loading a non-existent configuration', async () => {
 		const repo = new BunConfigRepository();
 		expect(repo.load(join(TEST_WORKSPACE, 'non_existent'))).rejects.toThrow();

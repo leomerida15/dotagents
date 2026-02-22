@@ -8,6 +8,8 @@ export const MappingRuleSchema = z.object({
 	from: z.string(),
 	to: z.string(),
 	format: z.optional(z.nativeEnum(MappingFormat)),
+	sourceExt: z.optional(z.string()),
+	targetExt: z.optional(z.string()),
 });
 
 export type MappingRuleDTO = z.infer<typeof MappingRuleSchema>;

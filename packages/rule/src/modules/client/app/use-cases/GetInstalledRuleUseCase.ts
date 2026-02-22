@@ -16,13 +16,20 @@ export class GetInstalledRuleUseCase {
 	}
 
 	private toDTO(rule: InstalledRule): InstalledRuleDTO {
+		const mapRule = (m: (typeof rule.inbound)[0]) => ({
+			from: m.from,
+			to: m.to,
+			format: m.format,
+			...(m.sourceExt != null && { sourceExt: m.sourceExt }),
+			...(m.targetExt != null && { targetExt: m.targetExt }),
+		});
 		return {
 			id: rule.id.toString(),
 			name: rule.name,
 			sourceRoot: rule.sourceRoot,
 			mappings: {
-				inbound: rule.inbound.map((m) => ({ from: m.from, to: m.to, format: m.format })),
-				outbound: rule.outbound.map((m) => ({ from: m.from, to: m.to, format: m.format })),
+				inbound: rule.inbound.map(mapRule),
+				outbound: rule.outbound.map(mapRule),
 			},
 			ui: {
 				icon: rule.ui.icon,

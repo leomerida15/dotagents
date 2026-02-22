@@ -50,16 +50,20 @@ export class BunConfigRepository implements IConfigRepository {
 				id: agent.id,
 				name: agent.name,
 				sourceRoot: agent.sourceRoot,
-				inbound: agent.inboundRules.map((r) => ({
-					from: r.from,
-					to: r.to,
-					format: r.format,
-				})),
-				outbound: agent.outboundRules.map((r) => ({
-					from: r.from,
-					to: r.to,
-					format: r.format,
-				})),
+			inbound: agent.inboundRules.map((r) => ({
+				from: r.from,
+				to: r.to,
+				format: r.format,
+				...(r.sourceExt != null && { sourceExt: r.sourceExt }),
+				...(r.targetExt != null && { targetExt: r.targetExt }),
+			})),
+			outbound: agent.outboundRules.map((r) => ({
+				from: r.from,
+				to: r.to,
+				format: r.format,
+				...(r.sourceExt != null && { sourceExt: r.sourceExt }),
+				...(r.targetExt != null && { targetExt: r.targetExt }),
+			})),
 			})),
 		};
 

@@ -1,10 +1,107 @@
-2026-02-21T23:33:01.611Z [INFO] DotAgents VSCode is now active
-2026-02-21T23:33:02.091Z [INFO] Migration: copying .agent → .agents/antigravity
-2026-02-21T23:33:02.951Z [INFO] Migration: copying .cursor → .agents/cursor
-2026-02-21T23:33:04.262Z [INFO] Migration: copied .agent → .agents/antigravity, .cursor → .agents/cursor
-2026-02-21T23:33:04.263Z [INFO] Project not initialized. Running initialization...
-2026-02-21T23:33:04.297Z [INFO] Initialization complete.
-2026-02-21T23:33:04.606Z [INFO] Installed rule for antigravity
-2026-02-21T23:33:04.841Z [INFO] Installed rule for cursor
-2026-02-21T23:33:05.683Z [WARN] Missing-rules detection or notification failed: ClientModule.createVerifyRulesExistenceUseCase is not a function
-2026-02-21T23:33:48.548Z [ERROR] Sync failed: {}
+2026-02-22T02:10:11.065Z [INFO] DotAgents VSCode is now active
+2026-02-22T02:10:11.722Z [INFO] Migration: copying .agent → .agents (bridge)
+2026-02-22T02:10:12.607Z [INFO] Migration: copying .cursor → .agents (bridge)
+2026-02-22T02:10:12.677Z [INFO] Migration: copied .agent → .agents, .cursor → .agents
+2026-02-22T02:10:12.678Z [INFO] Project not initialized. Running initialization...
+2026-02-22T02:10:12.690Z [INFO] Initialization complete.
+2026-02-22T02:10:13.425Z [INFO] Installed rule for antigravity
+2026-02-22T02:10:13.943Z [INFO] Installed rule for cursor
+2026-02-22T02:10:18.382Z [WARN] Missing-rules detection or notification failed: cannot open file:///home/snor/Documents/libs/supabase-kit/.agents/.ai/rules/make_rule.md. Detail: Unable to read file '/home/snor/Documents/libs/supabase-kit/.agents/.ai/rules/make_rule.md' (Error: Unable to resolve nonexistent file '/home/snor/Documents/libs/supabase-kit/.agents/.ai/rules/make_rule.md')
+2026-02-22T02:10:20.844Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:58:29.907Z [INFO] DotAgents VSCode is now active
+2026-02-22T02:58:30.656Z [INFO] Migration: copying .agent → .agents (bridge)
+2026-02-22T02:58:32.123Z [INFO] Migration: copying .cursor → .agents (bridge)
+2026-02-22T02:58:33.303Z [INFO] Migration: copied .agent → .agents, .cursor → .agents
+2026-02-22T02:58:33.304Z [INFO] Project not initialized. Running initialization...
+2026-02-22T02:58:33.340Z [INFO] Initialization complete.
+2026-02-22T02:58:33.548Z [INFO] Installed rule for antigravity
+2026-02-22T02:58:33.794Z [INFO] Installed rule for cursor
+2026-02-22T02:59:26.171Z [WARN] Missing-rules detection or notification failed: cannot open file:///home/snor/Documents/libs/supabase-kit/.agents/.ai/rules/make_rule.md. Detail: Unable to read file '/home/snor/Documents/libs/supabase-kit/.agents/.ai/rules/make_rule.md' (Error: Unable to resolve nonexistent file '/home/snor/Documents/libs/supabase-kit/.agents/.ai/rules/make_rule.md')
+2026-02-22T02:59:27.197Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:27.771Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:28.358Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:28.857Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:29.470Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:29.954Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:30.544Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:31.057Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:31.643Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:32.142Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:32.725Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:33.219Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:33.806Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:34.302Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:34.891Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:35.385Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:35.973Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:36.465Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:37.056Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:37.550Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:38.138Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:38.637Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:39.222Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:39.719Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:40.309Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:40.804Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:41.388Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:41.885Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:42.469Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:42.966Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:43.552Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:44.052Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:44.633Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:45.132Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:45.714Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:46.212Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:46.794Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:47.287Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:47.887Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:48.368Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:48.955Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:49.446Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:50.034Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:50.530Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:51.120Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:51.617Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:52.203Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:52.700Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:53.289Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:53.784Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:54.376Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:54.871Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:55.454Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:55.950Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:56.535Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:57.033Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:57.638Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:58.202Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:58.792Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:59.285Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T02:59:59.877Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:00.371Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:00.958Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:01.453Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:02.039Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:02.553Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:03.125Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:03.621Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:04.451Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:05.030Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:05.597Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:06.103Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:06.693Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:07.187Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:07.772Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:08.271Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:08.910Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:09.405Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:09.996Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:10.490Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:11.076Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:11.575Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:12.168Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:12.665Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:13.249Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:13.744Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:14.328Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-22T03:00:14.821Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit

@@ -1,12 +1,14 @@
 import type { ISyncInterpreter, SyncOptions } from '../../domain/ports/ISyncInterpreter';
 import { SyncAction } from '../../domain/entities/SyncAction';
 import { ActionType } from '../../domain/value-objects/ActionType';
-import { join, isAbsolute, relative, normalize } from 'path';
+import { join, isAbsolute, relative, normalize, basename, dirname } from 'path';
 import { MappingRule } from '@diff/modules/config/domain/value-objects/MappingRule';
-import { stat, access } from 'node:fs/promises';
+import { stat, access, readdir } from 'node:fs/promises';
 
 /**
  * Default implementation of the Sync Interpreter that handles basic file and directory mapping.
+ * When a rule has sourceExt/targetExt, file extensions are converted during sync (e.g. .mdc -> .md).
+ * Limitation: files not matching sourceExt are copied as-is; multiple files mapping to same target may overwrite.
  */
 export class DefaultSyncInterpreter implements ISyncInterpreter {
 	/**
@@ -81,20 +83,27 @@ export class DefaultSyncInterpreter implements ISyncInterpreter {
 		}
 
 		if (shouldCopy) {
-			// Determine action type based on rule format or source type
-			// Note: MappingRule.format is a hint, but we can also check directory stats
 			const isDirectory = sourceStats.isDirectory();
+			const hasConversion = rule.sourceExt != null && rule.targetExt != null;
 
-			// Recursively copy directories is handled by the FileSystem adapter usually for 'COPY'
-			// But if format says FILE and it is a directory, strictly it's a mismatch.
-			// keeping it simple:
-			actions.push(
-				SyncAction.create({
-					type: ActionType.COPY,
-					source: fullSource,
-					target: fullTarget,
-				}),
-			);
+			if (isDirectory && hasConversion) {
+				const files = await this.walkFiles(fullSource);
+				for (const file of files) {
+					const rel = relative(fullSource, file);
+					const rawTarget = join(fullTarget, rel);
+					const target = this.applyFormatConversion(file, rawTarget, rule);
+					actions.push(SyncAction.create({ type: ActionType.COPY, source: file, target }));
+				}
+			} else {
+				const target = this.applyFormatConversion(fullSource, fullTarget, rule);
+				actions.push(
+					SyncAction.create({
+						type: ActionType.COPY,
+						source: fullSource,
+						target,
+					}),
+				);
+			}
 		}
 
 		return actions;
@@ -107,6 +116,30 @@ export class DefaultSyncInterpreter implements ISyncInterpreter {
 		} catch {
 			return false;
 		}
+	}
+
+	private applyFormatConversion(sourcePath: string, targetPath: string, rule: MappingRule): string {
+		const se = rule.sourceExt;
+		const te = rule.targetExt;
+		if (se == null || te == null) return targetPath;
+		const base = basename(sourcePath);
+		if (!base.endsWith(se)) return targetPath;
+		const targetBase = base.slice(0, -se.length) + te;
+		return join(dirname(targetPath), targetBase);
+	}
+
+	private async walkFiles(dirPath: string): Promise<string[]> {
+		const files: string[] = [];
+		const entries = await readdir(dirPath, { withFileTypes: true });
+		for (const entry of entries) {
+			const fullPath = join(dirPath, entry.name);
+			if (entry.isDirectory()) {
+				files.push(...(await this.walkFiles(fullPath)));
+			} else {
+				files.push(fullPath);
+			}
+		}
+		return files;
 	}
 
 	private async interpretIncremental(
@@ -124,7 +157,8 @@ export class DefaultSyncInterpreter implements ISyncInterpreter {
 			const absPath = normalize(ap);
 			const relPart = relative(baseSource, absPath);
 			if (relPart.startsWith('..') || isAbsolute(relPart)) continue;
-			const targetPath = join(baseTarget, relPart);
+			const rawTargetPath = join(baseTarget, relPart);
+			const targetPath = this.applyFormatConversion(absPath, rawTargetPath, rule);
 
 			const sourceExists = await this.exists(absPath);
 			if (sourceExists) {

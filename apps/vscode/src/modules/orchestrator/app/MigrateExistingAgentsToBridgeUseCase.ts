@@ -25,8 +25,8 @@ export interface MigrateExistingAgentsToBridgeUseCaseProps {
 }
 
 /**
- * Migrates existing IDE agent folders (.cursor, .cline, etc.) into .agents/<agentId>
- * when .agents does not exist yet. Runs before InitializeProjectUseCase.
+ * Migrates existing IDE agent folders (.cursor, .cline, etc.) into .agents/ (canonical bridge:
+ * rules/, skills/, mcp/). Does NOT create per-agent subfolders. Runs before InitializeProjectUseCase.
  */
 export class MigrateExistingAgentsToBridgeUseCase {
 	private readonly configRepository: IConfigRepository;
@@ -75,9 +75,9 @@ export class MigrateExistingAgentsToBridgeUseCase {
 			if (rules.length === 0) continue;
 
 			const sourcePath = join(workspaceRoot, dir);
-			const targetPath = join(workspaceRoot, '.agents', agentId);
+			const targetPath = join(workspaceRoot, '.agents');
 
-			if (this.logger) this.logger.info(`Migration: copying ${dir} → .agents/${agentId}`);
+			if (this.logger) this.logger.info(`Migration: copying ${dir} → .agents (bridge)`);
 			await this.syncProject.execute({
 				rules,
 				sourcePath,

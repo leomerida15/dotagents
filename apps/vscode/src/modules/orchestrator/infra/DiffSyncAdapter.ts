@@ -59,7 +59,7 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
             await this.syncProject.execute({
                 rules: rule.mappings.inbound,
                 sourcePath: join(workspaceRoot, rule.sourceRoot),
-                targetPath: join(workspaceRoot, '.agents', rule.id),
+                targetPath: join(workspaceRoot, '.agents'),
             });
             lastSyncedAgentId = rule.id;
         }
@@ -91,7 +91,7 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
             await this.syncProject.execute({
                 rules: rule.mappings.inbound,
                 sourcePath: join(workspaceRoot, rule.sourceRoot),
-                targetPath: join(workspaceRoot, '.agents', rule.id),
+                targetPath: join(workspaceRoot, '.agents'),
                 ...(affectedPaths && affectedPaths.length > 0 ? { affectedPaths } : {}),
             });
         }

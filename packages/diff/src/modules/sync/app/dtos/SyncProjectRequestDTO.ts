@@ -5,7 +5,7 @@ export const SyncProjectRequestSchema = z.object({
 	rules: z.array(MappingRuleSchema),
 	sourcePath: z.string(),
 	targetPath: z.string(),
-	affectedPaths: z.array(z.string()).optional(),
+	affectedPaths: z.optional(z.array(z.string())),
 });
 
 export type SyncProjectRequestDTO = z.infer<typeof SyncProjectRequestSchema>;

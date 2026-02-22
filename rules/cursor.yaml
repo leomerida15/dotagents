@@ -13,6 +13,8 @@ mapping:
     - from: "rules/"
       to: "rules/"
       format: "directory"
+      source_ext: ".mdc"
+      target_ext: ".md"
     - from: "skills/"
       to: "skills/"
       format: "directory"
@@ -24,6 +26,9 @@ mapping:
   outbound:
     - from: "rules/"
       to: "rules/"
+      format: "directory"
+      source_ext: ".md"
+      target_ext: ".mdc"
     - from: "skills/"
       to: "skills/"
     - from: "workflows/"

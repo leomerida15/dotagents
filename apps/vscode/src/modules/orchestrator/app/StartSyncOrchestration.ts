@@ -65,7 +65,7 @@ export class StartSyncOrchestration {
             if (!exists) {
                 const migrationResult = await this.migrateExistingAgentsToBridge.execute({ workspaceRoot });
                 if (migrationResult.migrated.length > 0 && this.logger) {
-                    this.logger.info(`Migration: copied ${migrationResult.migrated.map(m => `${m.dir} → .agents/${m.agentId}`).join(', ')}`);
+                    this.logger.info(`Migration: copied ${migrationResult.migrated.map(m => `${m.dir} → .agents`).join(', ')}`);
                 }
                 if (this.logger) this.logger.info('Project not initialized. Running initialization...');
                 else console.log('Project not initialized. Running initialization...');

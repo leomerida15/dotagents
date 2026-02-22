@@ -74,7 +74,7 @@ describe("MigrateExistingAgentsToBridgeUseCase", () => {
         expect(mockSyncProject.execute).toHaveBeenCalledWith(
             expect.objectContaining({
                 sourcePath: "/tmp/foo/.cursor",
-                targetPath: "/tmp/foo/.agents/cursor",
+                targetPath: "/tmp/foo/.agents",
                 rules: expect.any(Array),
             }),
         );

@@ -28,6 +28,11 @@ mapping:
     - from: "instructions.txt"
       to: "rules/core.md"
       format: "markdown"
+    - from: "rules/"
+      to: "rules/"
+      format: "directory"
+      source_ext: ".mdc"
+      target_ext: ".md"
     - from: "custom_skills/"
       to: "skills/"
       format: "directory"
@@ -39,6 +44,11 @@ mapping:
   outbound:
     - from: "rules/core.md"
       to: "instructions.txt"
+    - from: "rules/"
+      to: "rules/"
+      format: "directory"
+      source_ext: ".md"
+      target_ext: ".mdc"
     - from: "skills/"
       to: "custom_skills/"
     - from: "mcp/settings.json"
@@ -47,6 +57,17 @@ mapping:
 # Universal storage folder target
 target_standard: ".agents/"
 ```
+
+### Format Conversion (source_ext / target_ext)
+
+When an agent uses a different file extension than the `.agents` standard, each mapping can specify:
+
+- `source_ext` (optional): Extension in the source path (e.g. `.mdc`). Must include the leading dot.
+- `target_ext` (optional): Extension in the target path (e.g. `.md`). Both must be specified together or both omitted.
+
+During sync, files matching `source_ext` are written with `target_ext` at the destination.
+
+**Bidirectionality**: Inbound rules describe agent → .agents (e.g. agent's `.mdc` becomes `.md`). Outbound rules describe .agents → agent; the conversion is reversed (e.g. bridge's `.md` becomes `.mdc`). For consistency, if inbound maps `.mdc` → `.md`, outbound must map `.md` → `.mdc`.
 
 ## 2. Universal Bridge Structure (.agents)
 

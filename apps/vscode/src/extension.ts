@@ -17,7 +17,7 @@ import { IdeWatcherService } from './modules/orchestrator/infra/IdeWatcherServic
 import { AgentsWatcherService } from './modules/orchestrator/infra/AgentsWatcherService';
 import { detectAgentFromHostApp } from './modules/orchestrator/infra/AgentHostDetector';
 import { debounce } from './modules/orchestrator/utils/debounce';
-import { InitializeProjectUseCase } from '@diff/modules/config/app/use-cases/InitializeProjectUseCase';
+import { InitializeProjectUseCase } from '@dotagents/diff';
 import { StatusBarManager } from './modules/ui/infra/StatusBarManager';
 
 /**
