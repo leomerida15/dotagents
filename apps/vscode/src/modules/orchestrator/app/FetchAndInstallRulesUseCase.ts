@@ -32,23 +32,29 @@ export class FetchAndInstallRulesUseCase {
 		this.logger = logger;
 	}
 
-	async execute(workspaceRoot: string): Promise<void> {
-		const config = await this.configRepository.load(workspaceRoot);
+	async execute(workspaceRoot: string, options?: { agentIds?: string[] }): Promise<void> {
 		const rulesDir = join(workspaceRoot, this.dotAgentsFolder, '.ai', 'rules');
 		await mkdir(rulesDir, { recursive: true });
 
-		for (const agent of config.agents) {
+		let targetIds: string[];
+		if (options?.agentIds != null && options.agentIds.length > 0) {
+			targetIds = options.agentIds;
+		} else {
+			const config = await this.configRepository.load(workspaceRoot);
+			targetIds = config.agents.map((a) => a.id);
+		}
+		for (const agentId of targetIds) {
 			try {
-				const content = await this.ruleProvider.fetchRuleRaw(agent.id);
+				const content = await this.ruleProvider.fetchRuleRaw(agentId);
 				if (content && content.trim()) {
-					const filePath = join(rulesDir, `${agent.id}.yaml`);
+					const filePath = join(rulesDir, `${agentId}.yaml`);
 					await writeFile(filePath, content, 'utf-8');
-					if (this.logger) this.logger.info(`Installed rule for ${agent.id}`);
-					else console.log(`Installed rule for ${agent.id}`);
+					if (this.logger) this.logger.info(`Installed rule for ${agentId}`);
+					else console.log(`Installed rule for ${agentId}`);
 				}
 			} catch (error: any) {
-				if (this.logger) this.logger.warn(`Could not install rule for ${agent.id}:`, error.message);
-				else console.warn(`Could not install rule for ${agent.id}:`, error.message);
+				if (this.logger) this.logger.warn(`Could not install rule for ${agentId}:`, error.message);
+				else console.warn(`Could not install rule for ${agentId}:`, error.message);
 			}
 		}
 	}

@@ -17,9 +17,9 @@ export class GetMissingRulesAgentIdsUseCase {
 		this.configRepository = configRepository;
 	}
 
-	async execute(workspaceRoot: string): Promise<string[]> {
+	async execute(workspaceRoot: string, options?: { agentIds?: string[] }): Promise<string[]> {
 		const config = await this.configRepository.load(workspaceRoot);
-		const agentIds = config.agents.map((a) => a.id);
+		const agentIds = options?.agentIds ?? config.agents.map((a) => a.id);
 		if (agentIds.length === 0) return [];
 
 		const rulesPath = join(workspaceRoot, '.agents', '.ai', 'rules');

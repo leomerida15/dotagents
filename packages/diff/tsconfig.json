@@ -2,16 +2,11 @@
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
 		"baseUrl": ".",
+		"rootDir": "./src",
 		"paths": {
-			"@diff": [
-				"./src/index"
-			],
-			"@diff/*": [
-				"./src/*"
-			]
+			"@diff": ["./src/index"],
+			"@diff/*": ["./src/*"]
 		}
 	},
-	"include": [
-		"src"
-	]
+	"include": ["src"]
 }

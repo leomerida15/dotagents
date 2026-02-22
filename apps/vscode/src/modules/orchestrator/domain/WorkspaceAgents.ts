@@ -1,5 +1,3 @@
-import type { MappingRuleDTO } from '@dotagents/diff';
-
 /**
  * Single source of truth for known agents: workspace marker dir and (optional) home config path.
  */
@@ -23,32 +21,3 @@ export const WORKSPACE_KNOWN_AGENTS: KnownAgent[] = [
 export const WORKSPACE_AGENT_MARKERS: { id: string; dir: string }[] = WORKSPACE_KNOWN_AGENTS.map(
 	(a) => ({ id: a.id, dir: a.workspaceMarker }),
 );
-
-/** Default inbound rules per agent for IDE → .agents migration (same shape as MappingRuleDTO). */
-export const DEFAULT_MIGRATION_RULES: Record<string, MappingRuleDTO[]> = {
-	cursor: [
-		{ from: 'rules/', to: 'rules/', format: 'directory' as const },
-		{ from: 'skills/', to: 'skills/', format: 'directory' as const },
-		{ from: 'workflows/', to: 'workflows/', format: 'directory' as const },
-	],
-	cline: [
-		{ from: 'rules/', to: 'rules/', format: 'directory' as const },
-		{ from: 'skills/', to: 'skills/', format: 'directory' as const },
-	],
-	'claude-code': [
-		{ from: 'rules/', to: 'rules/', format: 'directory' as const },
-	],
-	antigravity: [
-		{ from: 'rules/', to: 'rules/', format: 'directory' as const },
-	],
-	windsurf: [
-		{ from: 'rules/', to: 'rules/', format: 'directory' as const },
-		{ from: 'skills/', to: 'skills/', format: 'directory' as const },
-	],
-	opencode: [
-		{ from: 'rules/', to: 'rules/', format: 'directory' as const },
-	],
-	openclaw: [
-		{ from: 'rules/', to: 'rules/', format: 'directory' as const },
-	],
-};

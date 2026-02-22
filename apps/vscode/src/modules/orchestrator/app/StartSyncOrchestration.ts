@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 import { SyncStatus } from '../domain/SyncState';
 import { IDiffSyncEngine } from './ports/IDiffSyncEngine';
 import type { ILogger } from './ports/ILogger';
@@ -19,7 +21,12 @@ export interface StartSyncOrchestrationProps {
     getMissingRulesAgentIds: GetMissingRulesAgentIdsUseCase;
     notifyMissingRules?: (workspaceRoot: string, missingAgentIds: string[]) => void | Promise<void>;
     selectActiveAgent?: (workspaceRoot: string) => Promise<string | null>;
+    selectAgentForNewProject?: (workspaceRoot: string) => Promise<string | null>;
     logger?: ILogger;
+}
+
+export interface StartSyncOrchestrationResult {
+    completed: boolean;
 }
 
 export class StartSyncOrchestration {
@@ -32,9 +39,10 @@ export class StartSyncOrchestration {
     private getMissingRulesAgentIds: GetMissingRulesAgentIdsUseCase;
     private notifyMissingRules?: (workspaceRoot: string, missingAgentIds: string[]) => void | Promise<void>;
     private selectActiveAgent?: (workspaceRoot: string) => Promise<string | null>;
+    private selectAgentForNewProject?: (workspaceRoot: string) => Promise<string | null>;
     private logger: ILogger | undefined;
 
-    constructor({ statusBar, syncEngine, initializeProject, migrateExistingAgentsToBridge, configRepository, fetchAndInstallRules, getMissingRulesAgentIds, notifyMissingRules, selectActiveAgent, logger }: StartSyncOrchestrationProps) {
+    constructor({ statusBar, syncEngine, initializeProject, migrateExistingAgentsToBridge, configRepository, fetchAndInstallRules, getMissingRulesAgentIds, notifyMissingRules, selectActiveAgent, selectAgentForNewProject, logger }: StartSyncOrchestrationProps) {
         this.statusBar = statusBar;
         this.syncEngine = syncEngine;
         this.initializeProject = initializeProject;
@@ -44,16 +52,17 @@ export class StartSyncOrchestration {
         this.getMissingRulesAgentIds = getMissingRulesAgentIds;
         this.notifyMissingRules = notifyMissingRules;
         this.selectActiveAgent = selectActiveAgent;
+        this.selectAgentForNewProject = selectAgentForNewProject;
         this.logger = logger;
     }
 
-    async execute(options?: { direction?: 'inbound' | 'outbound'; skipAgentSelection?: boolean }) {
+    async execute(options?: { direction?: 'inbound' | 'outbound'; skipAgentSelection?: boolean }): Promise<StartSyncOrchestrationResult> {
         this.statusBar.update(SyncStatus.SYNCING);
 
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders || workspaceFolders.length === 0) {
             this.statusBar.update(SyncStatus.ERROR, 'No workspace folder open');
-            return;
+            return { completed: false };
         }
 
         const workspaceRoot = workspaceFolders[0]!.uri.fsPath;
@@ -61,9 +70,25 @@ export class StartSyncOrchestration {
         try {
             // 1. Check if project is initialized
             const exists = await this.configRepository.exists(workspaceRoot);
+            let selectedAgentId: string | null;
 
             if (!exists) {
-                const migrationResult = await this.migrateExistingAgentsToBridge.execute({ workspaceRoot });
+                // Select tool BEFORE fetch/migration (Sprint 1: herramienta obligatoria)
+                selectedAgentId = this.selectAgentForNewProject
+                    ? await this.selectAgentForNewProject(workspaceRoot)
+                    : null;
+                if (!selectedAgentId) {
+                    this.statusBar.update(SyncStatus.ERROR, 'Select a tool to continue');
+                    return { completed: false };
+                }
+                // Fetch rules for selected agent BEFORE migrate (Sprint 3: migration uses YAML rules)
+                await this.fetchAndInstallRules.execute(workspaceRoot, { agentIds: [selectedAgentId] });
+                const rulesFile = join(workspaceRoot, '.agents', '.ai', 'rules', `${selectedAgentId}.yaml`);
+                if (!existsSync(rulesFile)) {
+                    this.statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${selectedAgentId}`);
+                    return { completed: false };
+                }
+                const migrationResult = await this.migrateExistingAgentsToBridge.execute({ workspaceRoot, selectedAgentId });
                 if (migrationResult.migrated.length > 0 && this.logger) {
                     this.logger.info(`Migration: copied ${migrationResult.migrated.map(m => `${m.dir} → .agents`).join(', ')}`);
                 }
@@ -72,16 +97,41 @@ export class StartSyncOrchestration {
                 await this.initializeProject.execute({ workspaceRoot, force: false });
                 if (this.logger) this.logger.info('Initialization complete.');
                 else console.log('Initialization complete.');
+                // Persist selected agent in newly created config
+                const config = await this.configRepository.load(workspaceRoot);
+                config.manifest.setCurrentAgent(selectedAgentId);
+                config.manifest.setLastActiveAgent(selectedAgentId);
+                await this.configRepository.save(config);
             } else {
                 // Ensure .ai exists for projects initialized before this was added
                 await this.configRepository.ensureAIStructure(workspaceRoot);
+                // Resolve selected agent BEFORE fetch (Sprint 2: descargar solo para la herramienta seleccionada)
+                const config = await this.configRepository.load(workspaceRoot);
+                const currentAgentId = config.manifest.currentAgent;
+                if (options?.skipAgentSelection) {
+                    selectedAgentId = currentAgentId ?? null;
+                } else {
+                    const hostAgentId = detectAgentFromHostApp();
+                    selectedAgentId = currentAgentId ?? null;
+                    if (!currentAgentId || currentAgentId !== hostAgentId) {
+                        if (this.selectActiveAgent) {
+                            selectedAgentId = await this.selectActiveAgent(workspaceRoot);
+                        }
+                    }
+                }
             }
 
-            // 2. Fetch and install rules from GitHub for detected agents
-            await this.fetchAndInstallRules.execute(workspaceRoot);
+            if (!selectedAgentId) {
+                this.statusBar.update(SyncStatus.ERROR, 'Active tool not selected');
+                return { completed: false };
+            }
 
+            // 2. Fetch and install rules for selected agent only (Sprint 2)
+            await this.fetchAndInstallRules.execute(workspaceRoot, { agentIds: [selectedAgentId] });
+
+            let missingIds: string[] = [];
             try {
-                const missingIds = await this.getMissingRulesAgentIds.execute(workspaceRoot);
+                missingIds = await this.getMissingRulesAgentIds.execute(workspaceRoot, { agentIds: [selectedAgentId] });
                 if (missingIds.length > 0 && this.notifyMissingRules) {
                     await this.notifyMissingRules(workspaceRoot, missingIds);
                 }
@@ -90,26 +140,10 @@ export class StartSyncOrchestration {
                 else console.warn('Missing-rules detection or notification failed:', err?.message ?? err);
             }
 
-            // 3. Select active agent when needed
-            const config = await this.configRepository.load(workspaceRoot);
-            const currentAgentId = config.manifest.currentAgent;
-            let selectedAgentId: string | null;
-
-            if (options?.skipAgentSelection) {
-                selectedAgentId = currentAgentId ?? null;
-            } else {
-                const hostAgentId = detectAgentFromHostApp();
-                selectedAgentId = currentAgentId ?? null;
-                if (!currentAgentId || currentAgentId !== hostAgentId) {
-                    if (this.selectActiveAgent) {
-                        selectedAgentId = await this.selectActiveAgent(workspaceRoot);
-                    }
-                }
-            }
-
-            if (!selectedAgentId) {
-                this.statusBar.update(SyncStatus.ERROR, 'Active tool not selected');
-                return;
+			// Guard: do not sync if selected agent has no local rules (Sprint 3)
+            if (missingIds.includes(selectedAgentId)) {
+                this.statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${selectedAgentId}`);
+                return { completed: false };
             }
 
             // 3. Perform Sync
@@ -120,10 +154,12 @@ export class StartSyncOrchestration {
                 await this.syncEngine.syncOutboundAgent(workspaceRoot, selectedAgentId);
             }
             this.statusBar.update(SyncStatus.SYNCED);
+            return { completed: true };
         } catch (error: any) {
             if (this.logger) this.logger.error('Sync failed:', error);
             else console.error('Sync failed:', error);
             this.statusBar.update(SyncStatus.ERROR, error.message);
+            return { completed: false };
         }
     }
 }

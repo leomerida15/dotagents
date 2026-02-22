@@ -2,10 +2,13 @@ import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { IConfigRepository, ISyncProject, IFileSystem } from '@dotagents/diff';
 import type { ILogger } from './ports/ILogger';
-import { WORKSPACE_AGENT_MARKERS, DEFAULT_MIGRATION_RULES } from '../domain/WorkspaceAgents';
+import { ClientModule } from '@dotagents/rule';
+import { WORKSPACE_AGENT_MARKERS } from '../domain/WorkspaceAgents';
 
 export interface MigrateExistingAgentsInput {
 	workspaceRoot: string;
+	/** When set, migrate only this agent (must have local rules file). */
+	selectedAgentId?: string;
 }
 
 export interface MigratedAgent {
@@ -47,7 +50,7 @@ export class MigrateExistingAgentsToBridgeUseCase {
 	}
 
 	async execute(input: MigrateExistingAgentsInput): Promise<MigrateExistingAgentsResult> {
-		const { workspaceRoot } = input;
+		const { workspaceRoot, selectedAgentId } = input;
 
 		if (await this.configRepository.exists(workspaceRoot)) {
 			if (this.logger) this.logger.info('Migration: skipped (.agents already exists)');
@@ -61,18 +64,37 @@ export class MigrateExistingAgentsToBridgeUseCase {
 			}
 		}
 
-		if (present.length === 0) {
+		let toMigrate = present;
+		if (selectedAgentId != null) {
+			toMigrate = present.filter((p) => p.agentId === selectedAgentId);
+			if (toMigrate.length === 0) {
+				if (this.logger) this.logger.info('Migration: selected agent not found in workspace');
+				return { migrated: [] };
+			}
+		}
+
+		if (toMigrate.length === 0) {
 			if (this.logger) this.logger.info('Migration: no IDE folders found');
 			return { migrated: [] };
 		}
+
+		const rulesDir = join(workspaceRoot, '.agents', '.ai', 'rules');
+		const getRule = ClientModule.createGetInstalledRuleUseCase(rulesDir);
 
 		// Create minimal .agents structure (do not create state.json)
 		const aiPath = join(workspaceRoot, '.agents', '.ai');
 		await this.fileSystem.mkdir(aiPath);
 
-		for (const { agentId, dir } of present) {
-			const rules = DEFAULT_MIGRATION_RULES[agentId] ?? [];
-			if (rules.length === 0) continue;
+		const migrated: MigratedAgent[] = [];
+		for (const { agentId, dir } of toMigrate) {
+			const rule = await getRule.execute(agentId);
+			const rules = rule?.mappings.inbound ?? [];
+			if (rules.length === 0) {
+				if (selectedAgentId === agentId) {
+					if (this.logger) this.logger.warn(`Migration: no local rules for selected agent ${agentId}`);
+				}
+				continue;
+			}
 
 			const sourcePath = join(workspaceRoot, dir);
 			const targetPath = join(workspaceRoot, '.agents');
@@ -83,8 +105,9 @@ export class MigrateExistingAgentsToBridgeUseCase {
 				sourcePath,
 				targetPath,
 			});
+			migrated.push({ agentId, dir });
 		}
 
-		return { migrated: present };
+		return { migrated };
 	}
 }
