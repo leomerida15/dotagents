@@ -31,11 +31,8 @@ mapping:
       format: "directory"
     # Cursor: .cursor/mcp.json (workspace) → .agents/mcp/
     - from: "mcp.json"
-      to: "mcp/cursor-mcp.json"
+      to: "mcp.json"
       format: "json"
-    - from: "mcp/"
-      to: "mcp/"
-      format: "directory"
 
   # OUTBOUND: Desde el Puente Universal .agents hacia el Agente
   outbound:
@@ -50,12 +47,9 @@ mapping:
       to: "workflows/"
       format: "directory"
     # .agents/mcp/ → Cursor (.cursor/mcp.json)
-    - from: "mcp/cursor-mcp.json"
+    - from: "mcp.json"
       to: "mcp.json"
       format: "json"
-    - from: "mcp/"
-      to: "mcp/"
-      format: "directory"
 
 # Carpeta de almacenamiento universal objetivo
 target_standard: ".agents/"

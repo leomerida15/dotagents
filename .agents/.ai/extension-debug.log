@@ -43,3 +43,40 @@
 2026-02-23T14:10:49.571Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
 2026-02-23T14:11:05.513Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
 2026-02-23T14:11:06.047Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:12:56.813Z [INFO] DotAgents VSCode is now active
+2026-02-23T14:13:37.588Z [INFO] Installed rule for cursor
+2026-02-23T14:13:37.594Z [INFO] Migration: copying .cursor → .agents (bridge)
+2026-02-23T14:13:37.622Z [INFO] Migration: copied .cursor → .agents
+2026-02-23T14:13:37.623Z [INFO] Project not initialized. Running initialization...
+2026-02-23T14:13:37.631Z [INFO] Initialization complete.
+2026-02-23T14:13:37.760Z [INFO] Installed rule for cursor
+2026-02-23T14:13:37.910Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:13:38.537Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:14:50.124Z [INFO] DotAgents VSCode is now active
+2026-02-23T14:14:53.900Z [INFO] Installed rule for cursor
+2026-02-23T14:14:53.911Z [INFO] Migration: copying .cursor → .agents (bridge)
+2026-02-23T14:14:54.062Z [INFO] Migration: copied .cursor → .agents
+2026-02-23T14:14:54.062Z [INFO] Project not initialized. Running initialization...
+2026-02-23T14:14:54.070Z [INFO] Initialization complete.
+2026-02-23T14:14:54.439Z [INFO] Installed rule for cursor
+2026-02-23T14:14:54.481Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:14:55.059Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:14:55.317Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:23:55.037Z [INFO] DotAgents VSCode is now active
+2026-02-23T14:23:59.498Z [INFO] Installed rule for cursor
+2026-02-23T14:23:59.504Z [INFO] Migration: copying .cursor → .agents (bridge)
+2026-02-23T14:23:59.533Z [INFO] Migration: copied .cursor → .agents
+2026-02-23T14:23:59.534Z [INFO] Project not initialized. Running initialization...
+2026-02-23T14:23:59.541Z [INFO] Initialization complete.
+2026-02-23T14:23:59.667Z [INFO] Installed rule for cursor
+2026-02-23T14:23:59.777Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:24:00.372Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:24:21.782Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:24:46.746Z [INFO] DotAgents VSCode is now active
+2026-02-23T14:24:48.275Z [INFO] Installed rule for cursor
+2026-02-23T14:24:49.311Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:24:56.040Z [INFO] Installed rule for cursor
+2026-02-23T14:24:56.069Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:24:56.114Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:25:00.056Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T14:25:00.865Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
