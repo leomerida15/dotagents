@@ -1,12 +1,13 @@
 # Informe: Comportamiento actual vs. diseño planteado
 
-**Fecha:** 2025-02-21
+**Fecha:** 2025-02-22
 **Ámbito:** Extensión DotAgents VSCode / CLI — flujo de detección de herramienta y sincronización bidireccional
 
-```markdown
-
-2. **Paso 2 = selección + descarga de regl
-```
+> **Cambios recientes (roadmap Agent Host Detector):** Valor por defecto `vscode`; `WORKSPACE_KNOWN_AGENTS` solo con agentes con reglas en GitHub (antigravity, cursor); detección dinámica por bucle; notificación cuando IDE no reconocido con opciones Add Agent / Open make_rule.md; placeholder en selector para IDEs no listados. Roadmap: `context/apps/vscode/dev/agent-host-detector/` (status.md).
+>
+> **Cambios recientes (roadmap Tool Change Sync):** `syncNew(workspaceRoot, agentId)` ejecuta outbound + inbound (full sync). Tras cambiar herramienta por selector o al añadir agente manualmente, se ejecuta `syncNew` si existen reglas; ignoredPaths y cooldowns evitan bucles. Add Agent Manually añade agente a config, persiste currentAgent y lanza syncNew. Roadmap: `context/apps/vscode/dev/tool-change-sync/` (status.md).
+>
+> **Cambios recientes (roadmap Known Agents from Rules):** `WORKSPACE_KNOWN_AGENTS` se genera en build desde `rules/*.yaml` (WorkspaceAgents.generated.ts). En runtime el selector incluye agentes de `.agents/.ai/rules/*.yaml` (reglas custom) fusionados sin duplicados. Add Agent Manually usa la misma lista dinámica (conocidos + custom) y opción "Custom...". Roadmap: `context/apps/vscode/dev/known-agents-from-rules/` (status.md).
 
 ---
 
@@ -73,6 +74,7 @@ El flujo debe respetar estas condiciones obligatorias:
 | -------------------------------- | ------ | ----------------------------------------------------------------------------------------------------- |
 | Crear `.agents` si no existe     | ✅      | `InitializeProjectUseCase` crea la estructura vía `NodeConfigRepository.save()`.                      |
 | Crear `.agents/.ai` si no existe | ✅      | `NodeConfigRepository.save()` y `ensureAIStructure()` crean `.agents/.ai` y `.agents/.ai/rules`.      |
+| Revisar `state.json` al abrir    | ✅      | Si no existe, el flujo contempla selector/inicialización; si `currentAgent` es null o ≠ `hostAgentId`, se abre el selector. |
 | Momento de ejecución             | ✅      | Solo cuando hay workspace abierto; se usa `onDidChangeWorkspaceFolders` si no hay carpeta al activar. |
 
 
@@ -87,10 +89,13 @@ El flujo debe respetar estas condiciones obligatorias:
 
 | Aspecto                                     | Estado | Detalle                                                                                                                       |
 | ------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| Diálogo/select list para elegir herramienta | ✅      | QuickPick en `selectActiveAgent()` con lista de agentes desde `configRepository.load()`.                                      |
-| Detección del IDE                           | ✅      | `detectAgentFromHostApp()` (`vscode.env.appName`) y `detectCurrentAgentFromWorkspace()` (carpetas `.cursor`, `.cline`, etc.). |
-| Selección por el usuario                    | ✅      | El usuario elige en el QuickPick;`currentAgent` y `lastActiveAgent` se persisten en `.agents/.ai/state.json`.                 |
+| Diálogo/select list para elegir herramienta | ✅      | QuickPick en `selectActiveAgent()` con lista dinámica: `WORKSPACE_KNOWN_AGENTS` (build desde `rules/`) + agentes de `.agents/.ai/rules/*.yaml` (reglas custom), sin duplicados. |
+| Detección del IDE                           | ✅      | `detectAgentFromHostApp()` usa bucle sobre `WORKSPACE_KNOWN_AGENTS`; fallback `"vscode"` si no coincide.                      |
+| Selección por el usuario                    | ✅      | El usuario elige en el QuickPick; `currentAgent` y `lastActiveAgent` se persisten en `.agents/.ai/state.json`.                |
 | Check por defecto en IDE actual             | ✅      | Se preselecciona IDE host o `manifest.currentAgent` según prioridad.                                                          |
+| Abrir selector si currentAgent ≠ hostAgentId | ✅     | Si `currentAgent` es null o distinto de `hostAgentId`, se abre el selector antes de continuar (Requisito 8).                  |
+| Placeholder para IDE no reconocido          | ✅      | Si `hostAgentId === 'vscode'` y `!isHostIdeRecognized()`, placeholder: "Tu IDE ({appName}) no está en la lista. Usa Add Agent Manually…". |
+| Add Agent Manually (lista dinámica)         | ✅      | Lista = conocidos (WORKSPACE_KNOWN_AGENTS) + reglas custom; opción "Custom...". Al añadir agente se persiste en config y se ejecuta `syncNew` si hay reglas locales. |
 
 
 **Archivos:** `extension.ts`, `AgentHostDetector.ts`, `DiffSyncAdapter.ts`, `StartSyncOrchestration.ts`
@@ -168,6 +173,7 @@ El flujo debe respetar estas condiciones obligatorias:
 | Aspecto                                 | Estado | Detalle                                                                                    |
 | --------------------------------------- | ------ | ------------------------------------------------------------------------------------------ |
 | Opción en menú para cambiar herramienta | ✅      | «Configure Active Agents» abre el selector y persiste `currentAgent`/`lastActiveAgent`.    |
+| Sync new tras cambiar herramienta       | ✅      | Tras `selectActiveAgent`, si hay reglas para la herramienta se ejecuta `syncNew` bidireccional; si no, se mantiene el guard (p. ej. status bar «Reglas faltantes»). Orden: regla → herramienta. |
 | Opciones actuales                       | ⚠️     | Sync Now, Add Agent/IDE, Configure Active Agents, Generate Rules Prompt (no implementado). |
 
 
@@ -181,10 +187,26 @@ El flujo debe respetar estas condiciones obligatorias:
 | Aspecto                                         | Estado | Detalle                                                                           |
 | ----------------------------------------------- | ------ | --------------------------------------------------------------------------------- |
 | Comparar IDE actual con `manifest.currentAgent` | ✅      | `StartSyncOrchestration` compara `hostAgentId` con `currentAgent` antes del sync. |
-| Preguntar herramienta si difieren               | ✅      | Si difieren o `currentAgent` es null, se muestra el selector antes de continuar.  |
+| Preguntar herramienta si difieren               | ✅      | Si `currentAgent` es null o distinto de `hostAgentId`, se abre el selector.       |
+| Valor por defecto                               | ✅      | Fallback de detección es `"vscode"`; no se asume `"cursor"`.                      |
 
 
 **Archivos:** `StartSyncOrchestration.ts`, `AgentHostDetector.ts`
+
+---
+
+### 3.9 Agent Host Detector (IDEs reconocidos)
+
+
+| Aspecto                               | Estado | Detalle                                                                                                                                         |
+| ------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| IDEs reconocidos solo con reglas      | ✅      | `WORKSPACE_KNOWN_AGENTS` incluye solo agentes con reglas en GitHub: `antigravity`, `cursor`.                                                    |
+| Detección dinámica                    | ✅      | `detectAgentFromHostApp()` itera sobre `WORKSPACE_KNOWN_AGENTS`; si no coincide, devuelve `"vscode"`.                                           |
+| IDE no reconocido                     | ✅      | `isHostIdeRecognized()`: true si `appName` incluye algún agent.id o "vscode"/"visual studio code"; si no → IDE no soportado (Windsurf, Cline, etc.). |
+| Notificación IDE no soportado         | ✅      | `notifyUnrecognizedIde()`: una vez por sesión, si IDE no reconocido, mensaje con acciones "Add Agent" y "Open make_rule.md".                    |
+
+
+**Archivos:** `AgentHostDetector.ts` (detectAgentFromHostApp, isHostIdeRecognized, getHostAppName), `extension.ts` (notifyUnrecognizedIde, setupWatchers)
 
 ---
 
@@ -205,12 +227,7 @@ El flujo debe respetar estas condiciones obligatorias:
     "currentAgent": "cursor",
     "agents": {
       "antigravity": { "lastProcessedAt": 0 },
-      "cursor": { "lastProcessedAt": 1771529966626 },
-      "claude-code": { "lastProcessedAt": 0 },
-      "cline": { "lastProcessedAt": 0 },
-      "windsurf": { "lastProcessedAt": 0 },
-      "opencode": { "lastProcessedAt": 0 },
-      "agents": { "lastProcessedAt": 1771529966626 }
+      "cursor": { "lastProcessedAt": 1771529966626 }
     }
   },
   "agents": [
@@ -219,6 +236,10 @@ El flujo debe respetar estas condiciones obligatorias:
   ]
 }
 ```
+
+**Cambios aplicados / planeados:**
+- `manifest.agents` contiene solo agentes con reglas en GitHub (`antigravity`, `cursor`). La clave `manifest.agents.agents` es redundante y se elimina (Sprint 5).
+- **sourceRoot y paths:** `agents[].sourceRoot` puede derivarse del primer path con `scope: "workspace"` y `purpose: "marker"` o `"sync_source"` cuando las reglas YAML usan `paths`; se mantiene por compatibilidad con consumidores que solo leen `sourceRoot`.
 
 ### 4.3 Semántica (actual y planteada)
 
@@ -229,8 +250,30 @@ El flujo debe respetar estas condiciones obligatorias:
 | `manifest.lastActiveAgent` | Última herramienta que sincronizó.                                                                    |
 | `manifest.currentAgent`    | Herramienta activa; se pregunta al usuario cuando IDE difiere o no hay valor definido.                |
 | `manifest.agents`          | `{ agentId: { lastProcessedAt } }` — timestamps por herramienta para saber cuál está más actualizada. |
-| `agents`                   | Array para el selector de herramientas (`id`, `name`, `sourceRoot`, etc.).                            |
+| `agents`                   | Array para el selector de herramientas (`id`, `name`, `sourceRoot`, etc.). Puede incluir opcionalmente `paths` (array de objetos con path, scope, type, purpose); cuando existe, `sourceRoot` se deriva de `paths` para la UI y el sync. |
 
+
+---
+
+## 4.5 Cambios de comportamiento (Agent Host Detector)
+
+| Índice | Cambio                                                                                    |
+| :----: | ----------------------------------------------------------------------------------------- |
+| 1      | Valor por defecto de detección es `vscode`, no `cursor`.                                  |
+| 2      | Solo se reconocen IDEs con reglas en GitHub (`antigravity`, `cursor`).                    |
+| 3      | Si `currentAgent` es null o distinto de `hostAgentId`, se abre el selector.               |
+| 4      | Si el IDE no está reconocido, se notifica con opciones Add Agent / Open make_rule.md.     |
+| 5      | Placeholder en selector cuando el IDE no está en la lista.                                |
+| 6      | Se elimina `manifest.agents.agents` redundante (Sprint 5).                                |
+| 7      | **Paths como array:** Migración de `source_root` / `configPath` / `workspaceMarker` únicos al modelo `paths` (array de objetos con path, scope, type, purpose). Reglas YAML y `WORKSPACE_KNOWN_AGENTS` soportan `paths`; detección (FsAgentScanner), watchers (IdeWatcherService) y sync usan paths con purpose marker/sync_source. Ver `context/project/reports/source_filePath.md` y `context/pkg/rule/doc/rule.md`. |
+
+### 4.6 Cambios de comportamiento (Tool Change Sync y Known Agents from Rules)
+
+| Índice | Cambio                                                                                    |
+| :----: | ----------------------------------------------------------------------------------------- |
+| 1      | **Sync new bidireccional:** Al cambiar herramienta (selector o Add Agent) se ejecuta `syncNew(workspaceRoot, agentId)` (outbound + inbound) si existen reglas; si no, no sync (guard existente). |
+| 2      | **Known agents en build:** `WORKSPACE_KNOWN_AGENTS` se genera desde `rules/*.yaml` (WorkspaceAgents.generated.ts); solo agentes con reglas publicadas. |
+| 3      | **Selector en runtime:** Incluye agentes de `.agents/.ai/rules/*.yaml` (custom) fusionados con conocidos; Add Agent Manually usa la misma lista dinámica y "Custom...". |
 
 ---
 
@@ -255,7 +298,10 @@ El flujo debe respetar estas condiciones obligatorias:
 - `**@dotagents/diff**`: `SyncProjectUseCase`, `InitializeProjectUseCase`, `SyncManifest`, `Configuration`. Roadmap de integración: `context/apps/vscode/dev/core-engine-integration/`.
 - `**@dotagents/rule**`: `ClientModule.createListInstalledRulesUseCase` para listar reglas en `.agents/.ai/rules`.
 - `**NodeConfigRepository**`: `state.json` en `.agents/.ai/state.json`.
+- `**WORKSPACE_KNOWN_AGENTS**`: generado en build desde `rules/*.yaml` (solo agentes con reglas en el repo); en runtime el selector combina estos con agentes de `.agents/.ai/rules/*.yaml` (reglas custom). Usa el modelo `paths` (PathEntry[]) con helpers `getWorkspaceMarker`, `getConfigPath`, `getSyncSourcePaths`; detección y watchers se basan en esos paths.
+- **Reglas YAML** (`.agents/.ai/rules/*.yaml`): usan el esquema `paths` cuando están migradas; especificación en `context/pkg/rule/doc/rule.md`.
 - `**FsAgentScanner**`: detección de agentes vía `WORKSPACE_KNOWN_AGENTS`.
+- `**AgentHostDetector**`: `detectAgentFromHostApp()` (fallback `"vscode"`), `isHostIdeRecognized()`, `getHostAppName()`.
 - `**MigrateExistingAgentsToBridgeUseCase**`: migración IDE → `.agents` cuando `.agents` no existe.
 - `**IdeWatcherService**`: file watcher para source roots del IDE activo; dispara sync inbound reactivo.
 - `**AgentsWatcherService**`: file watcher para `.agents` (excl. `.agents/.ai/`); dispara sync outbound reactivo.
@@ -278,18 +324,27 @@ El flujo debe respetar estas condiciones obligatorias:
 ## 8. Referencias de código
 
 
-| Componente         | Ruta                                                                               |
-| ------------------ | ---------------------------------------------------------------------------------- |
-| Entrada extensión  | `apps/vscode/src/extension.ts`                                                     |
-| Orquestador sync   | `apps/vscode/src/modules/orchestrator/app/StartSyncOrchestration.ts`               |
-| Adapter sync       | `apps/vscode/src/modules/orchestrator/infra/DiffSyncAdapter.ts`                    |
-| Watcher IDE        | `apps/vscode/src/modules/orchestrator/infra/IdeWatcherService.ts`                  |
-| Watcher .agents    | `apps/vscode/src/modules/orchestrator/infra/AgentsWatcherService.ts`               |
-| Repositorio config | `apps/vscode/src/modules/orchestrator/infra/NodeConfigRepository.ts`               |
-| Reglas             | `apps/vscode/src/modules/orchestrator/app/FetchAndInstallRulesUseCase.ts`          |
-| Dominio agentes    | `apps/vscode/src/modules/orchestrator/domain/WorkspaceAgents.ts`                   |
-| Inicialización     | `packages/diff/src/modules/config/app/use-cases/InitializeProjectUseCase.ts`       |
-| SyncManifest       | `packages/diff/src/modules/config/domain/entities/SyncManifest.ts`                 |
-| Migración          | `apps/vscode/src/modules/orchestrator/app/MigrateExistingAgentsToBridgeUseCase.ts` |
+| Componente              | Ruta                                                                               |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| Entrada extensión       | `apps/vscode/src/extension.ts`                                                     |
+| Orquestador sync        | `apps/vscode/src/modules/orchestrator/app/StartSyncOrchestration.ts`               |
+| Adapter sync            | `apps/vscode/src/modules/orchestrator/infra/DiffSyncAdapter.ts`                    |
+| Agent Host Detector     | `apps/vscode/src/modules/orchestrator/infra/AgentHostDetector.ts`                  |
+| Watcher IDE             | `apps/vscode/src/modules/orchestrator/infra/IdeWatcherService.ts`                  |
+| Watcher .agents         | `apps/vscode/src/modules/orchestrator/infra/AgentsWatcherService.ts`               |
+| Repositorio config      | `apps/vscode/src/modules/orchestrator/infra/NodeConfigRepository.ts`               |
+| Reglas                  | `apps/vscode/src/modules/orchestrator/app/FetchAndInstallRulesUseCase.ts`          |
+| Dominio agentes         | `apps/vscode/src/modules/orchestrator/domain/WorkspaceAgents.ts`                   |
+| Inicialización          | `packages/diff/src/modules/config/app/use-cases/InitializeProjectUseCase.ts`       |
+| SyncManifest            | `packages/diff/src/modules/config/domain/entities/SyncManifest.ts`                 |
+| Migración               | `apps/vscode/src/modules/orchestrator/app/MigrateExistingAgentsToBridgeUseCase.ts` |
+
+**Roadmaps aplicados (status en cada `status.md`):**
+
+| Roadmap | Ubicación | Contenido |
+| ------- | --------- | --------- |
+| Agent Host Detector | `context/apps/vscode/dev/agent-host-detector/` | Known agents solo GitHub; AgentHostDetector dinámico (fallback vscode); IDE no reconocido (notificación + Add Agent / make_rule). |
+| Tool Change Sync | `context/apps/vscode/dev/tool-change-sync/` | Sync new bidireccional; Add Agent Manual flow (config + syncNew); integración en cambio de herramienta (onAfterSave → syncNew si hay reglas). |
+| Known Agents from Rules | `context/apps/vscode/dev/known-agents-from-rules/` | Build: generar WORKSPACE_KNOWN_AGENTS desde rules/; runtime: selector con reglas custom (.agents/.ai/rules); Add Agent Manually con lista dinámica. |
 
 

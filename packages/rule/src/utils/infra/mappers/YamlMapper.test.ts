@@ -89,4 +89,74 @@ describe('YamlMapper', () => {
 		expect(parsed.sourceRoot).toBe('.test/');
 		expect(parsed.inbound[0].sourceExt).toBe('.mdc');
 	});
+
+	it('derives sourceRoot from paths with purpose marker', () => {
+		const yamlContent = {
+			agent: {
+				id: 'cursor',
+				name: 'Cursor',
+				paths: [
+					{ path: '.cursor/', scope: 'workspace', type: 'directory', purpose: 'marker' },
+					{ path: '.cursor', scope: 'home', type: 'directory', purpose: 'config' },
+				],
+			},
+			mapping: { inbound: [], outbound: [] },
+		};
+
+		const parsed = YamlMapper.toDomain(yamlContent, source);
+
+		expect(parsed.sourceRoot).toBe('.cursor/');
+		expect(parsed.paths).toHaveLength(2);
+	});
+
+	it('derives sourceRoot from paths with purpose sync_source', () => {
+		const yamlContent = {
+			agent: {
+				id: 'custom-agent',
+				name: 'Custom',
+				paths: [
+					{ path: '.agent/', scope: 'workspace', type: 'directory', purpose: 'sync_source' },
+				],
+			},
+			mapping: { inbound: [], outbound: [] },
+		};
+
+		const parsed = YamlMapper.toDomain(yamlContent, source);
+
+		expect(parsed.sourceRoot).toBe('.agent/');
+	});
+
+	it('falls back to source_root when paths is empty', () => {
+		const yamlContent = {
+			agent: {
+				id: 'fallback-agent',
+				name: 'Fallback',
+				source_root: '.legacy/',
+				paths: [],
+			},
+			mapping: { inbound: [], outbound: [] },
+		};
+
+		const parsed = YamlMapper.toDomain(yamlContent, source);
+
+		expect(parsed.sourceRoot).toBe('.legacy/');
+	});
+
+	it('falls back to source_root when paths has no workspace entries', () => {
+		const yamlContent = {
+			agent: {
+				id: 'home-only',
+				name: 'Home Only',
+				source_root: '.default/',
+				paths: [
+					{ path: '.config/agent', scope: 'home', type: 'directory', purpose: 'config' },
+				],
+			},
+			mapping: { inbound: [], outbound: [] },
+		};
+
+		const parsed = YamlMapper.toDomain(yamlContent, source);
+
+		expect(parsed.sourceRoot).toBe('.default/');
+	});
 });

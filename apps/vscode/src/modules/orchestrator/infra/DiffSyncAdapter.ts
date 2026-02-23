@@ -140,6 +140,12 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
         return { writtenPaths };
     }
 
+    async syncNew(workspaceRoot: string, agentId: string): Promise<{ writtenPaths: string[] }> {
+        const { writtenPaths: outPaths } = await this.syncOutboundAgent(workspaceRoot, agentId);
+        const { writtenPaths: inPaths } = await this.syncAgent(workspaceRoot, agentId);
+        return { writtenPaths: [...outPaths, ...inPaths] };
+    }
+
     private extractWrittenPaths(result: SyncResultDTO): string[] {
         const paths: string[] = [];
         for (const action of result.actionsPerformed) {

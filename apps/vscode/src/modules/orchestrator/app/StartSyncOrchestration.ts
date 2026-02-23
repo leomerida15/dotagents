@@ -71,6 +71,7 @@ export class StartSyncOrchestration {
             // 1. Check if project is initialized
             const exists = await this.configRepository.exists(workspaceRoot);
             let selectedAgentId: string | null;
+            let usedPicker = false;
 
             if (!exists) {
                 // Select tool BEFORE fetch/migration (Sprint 1: herramienta obligatoria)
@@ -116,6 +117,7 @@ export class StartSyncOrchestration {
                     if (!currentAgentId || currentAgentId !== hostAgentId) {
                         if (this.selectActiveAgent) {
                             selectedAgentId = await this.selectActiveAgent(workspaceRoot);
+                            usedPicker = true;
                         }
                     }
                 }
@@ -144,6 +146,12 @@ export class StartSyncOrchestration {
             if (missingIds.includes(selectedAgentId)) {
                 this.statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${selectedAgentId}`);
                 return { completed: false };
+            }
+
+            // Sync already performed in selectActiveAgent onAfterSave (Sprint 3)
+            if (usedPicker && selectedAgentId) {
+                this.statusBar.update(SyncStatus.SYNCED);
+                return { completed: true };
             }
 
             // 3. Perform Sync

@@ -1,26 +1,29 @@
 import * as vscode from 'vscode';
 
 export interface AddAgentManuallyProps {
+    getAgentsForPicker: (workspaceRoot: string) => Promise<Array<{ id: string; label: string }>>;
     onAgentAdded: (agentId: string) => Promise<void>;
 }
 
 export class AddAgentManually {
+    private getAgentsForPicker: (workspaceRoot: string) => Promise<Array<{ id: string; label: string }>>;
     private onAgentAdded: (agentId: string) => Promise<void>;
 
-    constructor({ onAgentAdded }: AddAgentManuallyProps) {
+    constructor({ getAgentsForPicker, onAgentAdded }: AddAgentManuallyProps) {
+        this.getAgentsForPicker = getAgentsForPicker;
         this.onAgentAdded = onAgentAdded;
     }
 
     async execute() {
-        // List of known agents (ideally this would come from @dotagents/rule)
-        const commonAgents = [
-            { label: 'Kilo Code', id: 'kilo' },
-            { label: 'Cline', id: 'cline' },
-            { label: 'Roo Code', id: 'roo' },
-            { label: 'Continue', id: 'continue' },
-            { label: 'Cursor', id: 'cursor' },
-            { label: 'Custom...', id: 'custom' }
-        ];
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        if (!workspaceRoot) {
+            vscode.window.showErrorMessage('No workspace open.');
+            return;
+        }
+
+        const agents = await this.getAgentsForPicker(workspaceRoot);
+        const commonAgents = agents.map((a) => ({ label: a.label, id: a.id }));
+        commonAgents.push({ label: 'Custom...', id: 'custom' });
 
         const selection = await vscode.window.showQuickPick(commonAgents, {
             placeHolder: 'Select the Agent/IDE to add to synchronization'

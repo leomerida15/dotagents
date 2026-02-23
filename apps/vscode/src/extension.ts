@@ -16,9 +16,11 @@ import { ExtensionLogger } from './modules/orchestrator/infra/ExtensionLogger';
 import { IdeWatcherService } from './modules/orchestrator/infra/IdeWatcherService';
 import { AgentsWatcherService } from './modules/orchestrator/infra/AgentsWatcherService';
 import { IgnoredPathsRegistry } from './modules/orchestrator/infra/IgnoredPathsRegistry';
-import { detectAgentFromHostApp } from './modules/orchestrator/infra/AgentHostDetector';
+import { detectAgentFromHostApp, getHostAppName, isHostIdeRecognized } from './modules/orchestrator/infra/AgentHostDetector';
 import { debounce } from './modules/orchestrator/utils/debounce';
-import { InitializeProjectUseCase } from '@dotagents/diff';
+import { Agent, InitializeProjectUseCase } from '@dotagents/diff';
+import { ClientModule } from '@dotagents/rule';
+import { WORKSPACE_KNOWN_AGENTS, getWorkspaceMarker } from './modules/orchestrator/domain/WorkspaceAgents';
 import { StatusBarManager } from './modules/ui/infra/StatusBarManager';
 import { SyncStatus } from './modules/orchestrator/domain/SyncState';
 
@@ -55,6 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const COOLDOWN_MS = 300;
 	let inboundCooldownUntil = 0;
 	let outboundCooldownUntil = 0;
+	let hasNotifiedUnrecognizedIdeThisSession = false;
 
 	const runReactiveInboundSync = debounce(async () => {
 		const paths = [...inboundAffectedPaths];
@@ -163,13 +166,117 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	};
 
-	const addAgent = new AddAgentManually({
-		onAgentAdded: async (agentId) => {
-			// Aquí se conectará con @dotagents/rule para persistir la regla
-			// y luego disparar una sincronización inicial
-			await startSync.execute();
+	async function handleAddAgent(workspaceRoot: string, agentId: string): Promise<void> {
+		// 1. Ensure config exists
+		if (!(await configRepo.exists(workspaceRoot))) {
+			vscode.window.showErrorMessage('Initialize project first (run Sync).');
+			return;
 		}
+		// 2. Load config
+		const config = await configRepo.load(workspaceRoot);
+		const rulesDir = join(workspaceRoot, '.agents', '.ai', 'rules');
+
+		// 3. Verify rule exists
+		let ruleExists = existsSync(join(rulesDir, `${agentId}.yaml`));
+		if (!ruleExists) {
+			// 4. Try fetchAndInstallRules
+			await fetchAndInstallRules.execute(workspaceRoot, { agentIds: [agentId] });
+			ruleExists = existsSync(join(rulesDir, `${agentId}.yaml`));
+		}
+		if (!ruleExists) {
+			await ensureMakeRulePrompt(workspaceRoot, context);
+			const makeRulePath = join(workspaceRoot, '.agents', '.ai', 'rules', 'make_rule_prompt.md');
+			const uri = vscode.Uri.file(makeRulePath);
+			await vscode.window.showTextDocument(uri, { preview: false });
+			vscode.window.showInformationMessage(
+				`No rule for ${agentId}. Create it following make_rule_prompt.md, then run Sync.`,
+			);
+			return;
+		}
+
+		// 5. Add agent to config if not present
+		if (!config.agents.find((a) => a.id === agentId)) {
+			const getRule = ClientModule.createGetInstalledRuleUseCase(rulesDir);
+			const rule = await getRule.execute(agentId);
+			if (!rule) {
+				vscode.window.showErrorMessage(`Could not load rule for ${agentId}.`);
+				return;
+			}
+			let sourceRoot = rule.sourceRoot;
+			if (!sourceRoot) {
+				const known = WORKSPACE_KNOWN_AGENTS.find((a) => a.id === agentId);
+				sourceRoot = known ? getWorkspaceMarker(known) : `.${agentId}/`;
+			}
+			const newAgent = Agent.create({
+				id: agentId,
+				name: agentId,
+				sourceRoot,
+				inbound: [],
+				outbound: [],
+			});
+			config.addAgent(newAgent);
+		}
+
+		// 6. Persist currentAgent and lastActiveAgent
+		config.manifest.setCurrentAgent(agentId);
+		config.manifest.setLastActiveAgent(agentId);
+		await configRepo.save(config);
+
+		// 7. Sync new
+		const { writtenPaths } = await syncEngine.syncNew(workspaceRoot, agentId);
+		ignoredPaths.add(writtenPaths);
+		inboundCooldownUntil = Date.now() + COOLDOWN_MS;
+		outboundCooldownUntil = Date.now() + COOLDOWN_MS;
+
+		// 8. Re-register ideWatcher with new agent
+		ideWatcher.dispose();
+		ideWatcher.register(workspaceRoot, agentId, config);
+
+		statusBar.update(SyncStatus.SYNCED, `Agent ${agentId} added and synced.`);
+	}
+
+	const baseAgentsFromKnown: Agent[] = WORKSPACE_KNOWN_AGENTS.map((k) =>
+		Agent.create({
+			id: k.id,
+			name: k.id,
+			sourceRoot: getWorkspaceMarker(k),
+			inbound: [],
+			outbound: [],
+		}),
+	);
+
+	const addAgent = new AddAgentManually({
+		getAgentsForPicker: async (workspaceRoot: string) => {
+			const agents = await getMergedAgentsForSelector(workspaceRoot, baseAgentsFromKnown);
+			return agents.map((a) => ({ id: a.id, label: a.name || a.id }));
+		},
+		onAgentAdded: async (agentId) => {
+			const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+			if (!workspaceRoot) {
+				vscode.window.showErrorMessage('No workspace open.');
+				return;
+			}
+			await handleAddAgent(workspaceRoot, agentId);
+		},
 	});
+
+	const ADD_AGENT_ACTION = 'Add Agent';
+	const notifyUnrecognizedIde = async (workspaceRoot: string): Promise<void> => {
+		if (hasNotifiedUnrecognizedIdeThisSession) return;
+		if (isHostIdeRecognized()) return;
+		hasNotifiedUnrecognizedIdeThisSession = true;
+		const appName = getHostAppName();
+		const message = `Tu IDE (${appName}) no está soportado. Puedes añadir reglas manualmente.`;
+		const chosen = await vscode.window.showWarningMessage(message, ADD_AGENT_ACTION, MAKE_RULE_ACTION);
+		if (chosen === ADD_AGENT_ACTION) {
+			await addAgent.execute();
+		} else if (chosen === MAKE_RULE_ACTION) {
+			await ensureMakeRulePrompt(workspaceRoot, context);
+			const makeRulePath = join(workspaceRoot, '.agents', '.ai', 'rules', 'make_rule_prompt.md');
+			const uri = vscode.Uri.file(makeRulePath);
+			await vscode.window.showTextDocument(uri, { preview: false });
+		}
+	};
 
 	const showSyncDirectionPicker = async (): Promise<'inbound' | 'outbound' | null> => {
 		type DirectionQuickPickItem = vscode.QuickPickItem & { value: 'inbound' | 'outbound' };
@@ -183,12 +290,41 @@ export function activate(context: vscode.ExtensionContext) {
 
 	type AgentQuickPickItem = vscode.QuickPickItem & { id: string };
 
+	async function getAgentsFromCustomRules(workspaceRoot: string): Promise<Agent[]> {
+		const rulesDir = join(workspaceRoot, '.agents', '.ai', 'rules');
+		try {
+			const listRules = ClientModule.createListInstalledRulesUseCase(rulesDir);
+			const dtos = await listRules.execute();
+			return dtos.map((dto) =>
+				Agent.create({
+					id: dto.id,
+					name: dto.name || dto.id,
+					sourceRoot: dto.sourceRoot || `.${dto.id}/`,
+					inbound: [],
+					outbound: [],
+				}),
+			);
+		} catch {
+			return [];
+		}
+	}
+
+	async function getMergedAgentsForSelector(
+		workspaceRoot: string,
+		baseAgents: Agent[],
+	): Promise<Agent[]> {
+		const customAgents = await getAgentsFromCustomRules(workspaceRoot);
+		const baseIds = new Set(baseAgents.map((a) => a.id));
+		const customOnly = customAgents.filter((a) => !baseIds.has(a.id));
+		return [...baseAgents, ...customOnly];
+	}
+
 	const selectActiveAgentBase = async (
 		workspaceRoot: string,
 		onAfterSave?: (agentId: string, config: Awaited<ReturnType<NodeConfigRepository['load']>>) => void | Promise<void>,
 	): Promise<string | null> => {
 		const config = await configRepo.load(workspaceRoot);
-		const agents = config.agents;
+		const agents = await getMergedAgentsForSelector(workspaceRoot, config.agents);
 
 		if (!agents.length) {
 			vscode.window.showInformationMessage('No agents detected for selection.');
@@ -208,10 +344,15 @@ export function activate(context: vscode.ExtensionContext) {
 			items.find((item) => item.id === hostAgentId)
 			?? (manifestAgentId ? items.find((item) => item.id === manifestAgentId) : undefined);
 
+		const unrecognizedPlaceholder =
+			hostAgentId === 'vscode' && !isHostIdeRecognized()
+				? `Tu IDE (${getHostAppName()}) no está en la lista. Usa Add Agent Manually para contribuir reglas.`
+				: 'Select the active tool/IDE';
+
 		const selection = await new Promise<AgentQuickPickItem | undefined>((resolve) => {
 			const quickPick = vscode.window.createQuickPick<AgentQuickPickItem>();
 			quickPick.items = items;
-			quickPick.placeholder = 'Select the active tool/IDE';
+			quickPick.placeholder = unrecognizedPlaceholder;
 			quickPick.ignoreFocusOut = true;
 			if (defaultItem) {
 				quickPick.activeItems = [defaultItem];
@@ -244,10 +385,20 @@ export function activate(context: vscode.ExtensionContext) {
 		selectActiveAgentBase(workspaceRoot, async (agentId, config) => {
 			ideWatcher.dispose();
 			ideWatcher.register(workspaceRoot, agentId, config);
+			await fetchAndInstallRules.execute(workspaceRoot, { agentIds: [agentId] });
+			const ruleExists = existsSync(join(workspaceRoot, '.agents', '.ai', 'rules', `${agentId}.yaml`));
+			if (ruleExists) {
+				const { writtenPaths } = await syncEngine.syncNew(workspaceRoot, agentId);
+				ignoredPaths.add(writtenPaths);
+				inboundCooldownUntil = Date.now() + COOLDOWN_MS;
+				outboundCooldownUntil = Date.now() + COOLDOWN_MS;
+				statusBar.update(SyncStatus.SYNCED, `Tool ${agentId} synced.`);
+			}
 		});
 
 	const selectAgentForNewProject = async (workspaceRoot: string): Promise<string | null> => {
-		const agents = await agentScanner.detectAgents(workspaceRoot);
+		const baseAgents = await agentScanner.detectAgents(workspaceRoot);
+		const agents = await getMergedAgentsForSelector(workspaceRoot, baseAgents);
 		if (!agents.length) {
 			vscode.window.showInformationMessage('No tools detected. Add a tool manually.');
 			return null;
@@ -261,10 +412,14 @@ export function activate(context: vscode.ExtensionContext) {
 		}));
 		const hostAgentId = detectAgentFromHostApp();
 		const defaultItem = items.find((item) => item.id === hostAgentId);
+		const unrecognizedPlaceholder =
+			hostAgentId === 'vscode' && !isHostIdeRecognized()
+				? `Tu IDE (${getHostAppName()}) no está en la lista. Usa Add Agent Manually para contribuir reglas.`
+				: 'Select the active tool/IDE';
 		const selection = await new Promise<AgentQuickPickItem | undefined>((resolve) => {
 			const quickPick = vscode.window.createQuickPick<AgentQuickPickItem>();
 			quickPick.items = items;
-			quickPick.placeholder = 'Select the active tool/IDE';
+			quickPick.placeholder = unrecognizedPlaceholder;
 			quickPick.ignoreFocusOut = true;
 			if (defaultItem) {
 				quickPick.activeItems = [defaultItem];
@@ -298,6 +453,7 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	const setupWatchers = async (workspaceRoot: string): Promise<void> => {
+		await notifyUnrecognizedIde(workspaceRoot);
 		const exists = await configRepo.exists(workspaceRoot);
 		if (!exists) return;
 

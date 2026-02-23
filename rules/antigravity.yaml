@@ -3,8 +3,16 @@ agent:
   id: "antigravity"
   name: "Antigravity"
 
-# The relative base path where the agent stores its local settings
-source_root: ".agent/"
+# Agent paths: workspace (detection/sync) and home (global config)
+paths:
+  - path: ".agent/"
+    scope: "workspace"
+    type: "directory"
+    purpose: "marker"
+  - path: ".gemini/antigravity"
+    scope: "home"
+    type: "directory"
+    purpose: "config"
 
 # Bidirectional Flow Definition
 mapping:

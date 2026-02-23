@@ -3,6 +3,15 @@
  * Build script: compiles TypeScript and emits declaration files.
  */
 export async function build(): Promise<void> {
+	const genProc = Bun.spawn(['bun', 'run', 'scripts/generate-known-agents.ts'], {
+		cwd: process.cwd(),
+		stdout: 'inherit',
+		stderr: 'inherit',
+	});
+	const genExit = await genProc.exited;
+	if (genExit !== 0) {
+		throw new Error(`generate-known-agents.ts failed with code ${genExit}`);
+	}
 	console.log('Building...');
 	await Bun.build({
 		entrypoints: ['src/extension.ts'],

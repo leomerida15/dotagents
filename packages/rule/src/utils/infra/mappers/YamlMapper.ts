@@ -3,6 +3,13 @@ import { UIMetadata } from '../../domain/value-objects/UIMetadata';
 import { MappingRule } from '../../domain/value-objects/MappingRule';
 import { RuleSource } from '../../domain/value-objects/RuleSource';
 
+export interface PathEntry {
+	path: string;
+	scope?: 'workspace' | 'home';
+	type?: 'file' | 'directory';
+	purpose?: 'marker' | 'sync_source' | 'config';
+}
+
 interface YamlMappingItem {
 	from: string;
 	to: string;
@@ -17,6 +24,7 @@ interface YamlRuleSchema {
 		id: string;
 		name: string;
 		source_root?: string;
+		paths?: PathEntry[];
 		mapping?: {
 			inbound?: YamlMappingItem[];
 			outbound?: YamlMappingItem[];
@@ -28,6 +36,7 @@ interface YamlRuleSchema {
 		};
 	};
 	source_root?: string;
+	paths?: PathEntry[];
 	mapping?: {
 		inbound?: YamlMappingItem[];
 		outbound?: YamlMappingItem[];
@@ -38,10 +47,21 @@ export interface ParsedRuleData {
 	id: AgentID;
 	name: string;
 	sourceRoot: string;
+	paths?: PathEntry[];
 	inbound: MappingRule[];
 	outbound: MappingRule[];
 	source: RuleSource;
 	ui: UIMetadata;
+}
+
+function deriveSourceRootFromPaths(paths: PathEntry[]): string | undefined {
+	const workspacePaths = paths.filter((p) => p.scope === 'workspace');
+	const markerOrSyncSource = workspacePaths.find(
+		(p) => p.purpose === 'marker' || p.purpose === 'sync_source',
+	);
+	if (markerOrSyncSource) return markerOrSyncSource.path;
+	const firstWorkspace = workspacePaths[0];
+	return firstWorkspace?.path;
 }
 
 function toMappingRule(m: YamlMappingItem): MappingRule {
@@ -66,8 +86,11 @@ export class YamlMapper {
 			throw new Error('Invalid YAML: Missing agent.id');
 		}
 
+		const paths = agent.paths ?? schema.paths;
+		const fromPaths =
+			paths != null && paths.length > 0 ? deriveSourceRootFromPaths(paths) : undefined;
 		const sourceRoot =
-			agent.source_root ?? schema.source_root ?? '.';
+			fromPaths ?? agent.source_root ?? schema.source_root ?? '.';
 		const mapping = agent.mapping ?? schema.mapping;
 		const inbound = mapping?.inbound ?? [];
 		const outbound = mapping?.outbound ?? [];
@@ -76,6 +99,7 @@ export class YamlMapper {
 			id: new AgentID(agent.id),
 			name: agent.name,
 			sourceRoot,
+			paths: paths ?? undefined,
 			inbound: inbound.map(toMappingRule),
 			outbound: outbound.map(toMappingRule),
 			source: source,

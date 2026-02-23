@@ -58,6 +58,79 @@ mapping:
 target_standard: ".agents/"
 ```
 
+### Paths (alternativa a source_root)
+
+En lugar de `source_root`, puedes usar `paths`: un array de objetos que define explícitamente cada ruta, su alcance, tipo y propósito.
+
+| Campo     | Valores                     | Descripción                                                                 |
+|-----------|-----------------------------|-----------------------------------------------------------------------------|
+| `path`    | string                      | Ruta relativa al workspace o a `$HOME` según `scope`                        |
+| `scope`   | `"workspace"` \| `"home"`   | `workspace` = raíz del proyecto; `home` = relativo a `$HOME` (sin prefijo `~`) |
+| `type`    | `"file"` \| `"directory"`   | Archivo o carpeta                                                           |
+| `purpose` | `"marker"` \| `"sync_source"` \| `"config"` | `marker` = detección; `sync_source` = origen/destino sync; `config` = configuración global |
+
+**Compatibilidad hacia atrás con source_root:**
+
+- Si existe `source_root` y no existe `paths`, se comporta como hoy.
+- Si existe `paths`, tiene prioridad; `source_root` se ignora (o se deriva del primer path workspace con purpose `marker` o `sync_source`).
+- Durante la migración ambas claves pueden coexistir; el parser usará `paths` si está presente.
+
+**Ejemplo: Cursor** (carpeta única, mismo nombre en workspace y home):
+
+```yaml
+paths:
+  - path: ".cursor/"
+    scope: "workspace"
+    type: "directory"
+    purpose: "marker"
+  - path: ".cursor"
+    scope: "home"
+    type: "directory"
+    purpose: "config"
+mapping:
+  inbound: []
+  outbound: []
+target_standard: ".agents/"
+```
+
+**Ejemplo: Antigravity** (nombres distintos workspace vs home):
+
+```yaml
+paths:
+  - path: ".agent/"
+    scope: "workspace"
+    type: "directory"
+    purpose: "marker"
+  - path: ".gemini/antigravity"
+    scope: "home"
+    type: "directory"
+    purpose: "config"
+mapping:
+  inbound: []
+  outbound: []
+target_standard: ".agents/"
+```
+
+**Ejemplo: Claude-code** (estructura real: .claude/ y ~/.claude/):
+
+```yaml
+paths:
+  - path: ".claude/"
+    scope: "workspace"
+    type: "directory"
+    purpose: "marker"
+  - path: ".claude"
+    scope: "home"
+    type: "directory"
+    purpose: "config"
+mapping:
+  inbound: []
+  outbound: []
+target_standard: ".agents/"
+```
+
+> Para mappings completos, ver el esquema principal en la sección 1.
+
 ### Format Conversion (source_ext / target_ext)
 
 When an agent uses a different file extension than the `.agents` standard, each mapping can specify:

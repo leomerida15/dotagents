@@ -1,8 +1,9 @@
 import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { stat, readFile, readdir } from 'node:fs/promises';
 import { Agent, IAgentScanner } from '@dotagents/diff';
-import { WORKSPACE_KNOWN_AGENTS } from '../domain/WorkspaceAgents';
+import { WORKSPACE_KNOWN_AGENTS, getWorkspaceMarker, getConfigPath, getSyncSourcePaths } from '../domain/WorkspaceAgents';
 
 interface UserAgentConfig {
     include?: string[];
@@ -19,16 +20,32 @@ export class FsAgentScanner implements IAgentScanner {
     async detectAgents(workspaceRoot: string): Promise<Agent[]> {
         const agentsMap = new Map<string, Agent>();
 
-        // 1. Scan workspace for agent markers (priority: workspace-relative sourceRoot)
+        // 1. Scan workspace for agent markers (paths with purpose marker or sync_source, or fallback to dir name)
         try {
             const entries = await readdir(workspaceRoot, { withFileTypes: true });
             const dirNames = entries.filter((e) => e.isDirectory()).map((e) => e.name);
             for (const known of WORKSPACE_KNOWN_AGENTS) {
-                if (dirNames.includes(known.workspaceMarker)) {
+                const syncPaths = getSyncSourcePaths(known);
+                let detected = false;
+                if (syncPaths.length > 0) {
+                    for (const p of syncPaths) {
+                        const fullPath = join(workspaceRoot, p.path.replace(/\/$/, ''));
+                        if (existsSync(fullPath)) {
+                            detected = true;
+                            break;
+                        }
+                    }
+                }
+                if (!detected) {
+                    const marker = getWorkspaceMarker(known);
+                    detected = dirNames.includes(marker);
+                }
+                if (detected) {
+                    const sourceRoot = getWorkspaceMarker(known);
                     agentsMap.set(known.id, Agent.create({
                         id: known.id,
                         name: known.id,
-                        sourceRoot: known.workspaceMarker,
+                        sourceRoot,
                         inbound: [],
                         outbound: []
                     }));
@@ -41,7 +58,7 @@ export class FsAgentScanner implements IAgentScanner {
         // 2. Detect installed agents in home (fallback if not in workspace)
         for (const known of WORKSPACE_KNOWN_AGENTS) {
             if (agentsMap.has(known.id)) continue; // Prefer workspace over home
-            const fullPath = join(this.homeDir, known.configPath);
+            const fullPath = join(this.homeDir, getConfigPath(known));
             try {
                 if ((await stat(fullPath)).isDirectory()) {
                     agentsMap.set(known.id, Agent.create({
@@ -95,7 +112,7 @@ export class FsAgentScanner implements IAgentScanner {
                 if (!agentsMap.has(includedId)) {
                     const known = WORKSPACE_KNOWN_AGENTS.find(a => a.id === includedId);
                     if (known) {
-                        const fullPath = join(this.homeDir, known.configPath);
+                        const fullPath = join(this.homeDir, getConfigPath(known));
                         // Double check existence? Or trust user?
                         // Better to trust user but maybe warn if path missing.
                         // For now, let's try to add it with standard path.

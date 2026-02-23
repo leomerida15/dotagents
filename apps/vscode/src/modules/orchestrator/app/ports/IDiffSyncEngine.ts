@@ -25,4 +25,13 @@ export interface IDiffSyncEngine {
      * @returns Paths written by the sync (for IgnoredPathsRegistry).
      */
     syncOutboundAgent(workspaceRoot: string, agentId: string, affectedPaths?: string[]): Promise<{ writtenPaths: string[] }>;
+
+    /**
+     * Sync new: full bidirectional sync (.agents -> IDE, then IDE -> .agents).
+     * For use when changing tools; caller must add writtenPaths to IgnoredPathsRegistry and set cooldowns.
+     * @param workspaceRoot Root path of the current workspace.
+     * @param agentId Agent ID to sync.
+     * @returns Paths written by both syncs (for IgnoredPathsRegistry).
+     */
+    syncNew(workspaceRoot: string, agentId: string): Promise<{ writtenPaths: string[] }>;
 }

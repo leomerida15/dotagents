@@ -46,6 +46,7 @@ describe("StartSyncOrchestration", () => {
             syncAll: mock(() => Promise.resolve()),
             syncAgent: mock(() => Promise.resolve({ writtenPaths: [] })),
             syncOutboundAgent: mock(() => Promise.resolve({ writtenPaths: [] })),
+            syncNew: mock(() => Promise.resolve({ writtenPaths: [] })),
         };
         mockInitializeProject = { execute: mock(() => Promise.resolve()) };
         mockMigrateExistingAgentsToBridge = {
