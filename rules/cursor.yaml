@@ -26,7 +26,7 @@ mapping:
     - from: "skills/"
       to: "skills/"
       format: "directory"
-    - from: "workflows/"
+    - from: "commands/"
       to: "workflows/"
       format: "directory"
     # Cursor: .cursor/mcp.json (workspace) → .agents/mcp/
@@ -44,7 +44,7 @@ mapping:
     - from: "skills/"
       to: "skills/"
     - from: "workflows/"
-      to: "workflows/"
+      to: "commands/"
       format: "directory"
     # .agents/mcp/ → Cursor (.cursor/mcp.json)
     - from: "mcp.json"
