@@ -1,5 +1,5 @@
 {
-	"name": "dotagents",
+	"name": "@dotagents/vscode",
 	"displayName": "dotAgents",
 	"description": "dotAgents is a IA settings synchronization extension for IDEs fork from vscode.",
 	"version": "0.0.4",
