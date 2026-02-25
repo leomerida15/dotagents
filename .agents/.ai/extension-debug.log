@@ -80,3 +80,98 @@
 2026-02-23T14:24:56.114Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
 2026-02-23T14:25:00.056Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
 2026-02-23T14:25:00.865Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T18:45:52.747Z [INFO] DotAgents VSCode is now active
+2026-02-23T18:46:04.863Z [INFO] Installed rule for cursor
+2026-02-23T18:46:04.869Z [INFO] Migration: copying .cursor → .agents (bridge)
+2026-02-23T18:46:04.903Z [INFO] Migration: copied .cursor → .agents
+2026-02-23T18:46:04.904Z [INFO] Project not initialized. Running initialization...
+2026-02-23T18:46:04.911Z [INFO] Initialization complete.
+2026-02-23T18:46:05.074Z [INFO] Installed rule for cursor
+2026-02-23T18:46:05.109Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T18:46:05.655Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T18:47:23.511Z [INFO] DotAgents VSCode is now active
+2026-02-23T18:47:35.638Z [INFO] Installed rule for antigravity
+2026-02-23T18:47:35.656Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T18:47:35.666Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T18:47:35.707Z [INFO] Installed rule for antigravity
+2026-02-23T18:48:11.591Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T18:48:21.797Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T18:51:25.300Z [INFO] [DiffSyncAdapter] syncOutboundAgent done kilocode workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T18:51:25.311Z [INFO] [DiffSyncAdapter] currentAgent set to kilocode workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T18:53:25.897Z [INFO] [DiffSyncAdapter] syncOutboundAgent done kilocode workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T18:54:23.530Z [INFO] Installed rule for antigravity
+2026-02-23T18:54:23.567Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T18:54:23.582Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T18:59:02.004Z [INFO] DotAgents VSCode is now active
+2026-02-23T18:59:11.153Z [INFO] Installed rule for cursor
+2026-02-23T18:59:11.245Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T18:59:11.768Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T18:59:11.874Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T18:59:11.905Z [INFO] Installed rule for cursor
+2026-02-23T18:59:58.527Z [INFO] Installed rule for cursor
+2026-02-23T18:59:58.539Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T18:59:58.551Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T19:00:02.739Z [INFO] Installed rule for cursor
+2026-02-23T19:00:02.752Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T19:00:03.387Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /home/snor/Documents/libs/supabase-kit
+2026-02-23T20:26:23.907Z [INFO] DotAgents VSCode is now active
+2026-02-23T20:26:42.180Z [INFO] Installed rule for antigravity
+2026-02-23T20:26:42.198Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T20:26:42.209Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T20:26:42.252Z [INFO] Installed rule for antigravity
+2026-02-23T20:28:24.036Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T20:28:47.331Z [INFO] Installed rule for antigravity
+2026-02-23T20:28:47.342Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T20:28:47.353Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T20:28:50.012Z [INFO] Installed rule for antigravity
+2026-02-23T20:28:50.024Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-23T20:28:50.503Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-24T15:45:15.213Z [INFO] DotAgents VSCode is now active
+2026-02-24T15:45:16.340Z [INFO] Installed rule for antigravity
+2026-02-24T15:45:16.721Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-24T22:25:43.334Z [INFO] DotAgents VSCode is now active
+2026-02-24T22:25:44.364Z [INFO] Installed rule for antigravity
+2026-02-24T22:25:44.684Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-24T23:29:13.203Z [INFO] DotAgents VSCode is now active
+2026-02-24T23:29:33.064Z [INFO] Installed rule for antigravity
+2026-02-24T23:29:33.069Z [INFO] Migration: copying .agent → .agents (bridge)
+2026-02-24T23:29:33.080Z [INFO] Migration: copied .agent → .agents
+2026-02-24T23:29:33.080Z [INFO] Project not initialized. Running initialization...
+2026-02-24T23:29:33.083Z [INFO] Initialization complete.
+2026-02-24T23:29:33.125Z [INFO] Installed rule for antigravity
+2026-02-24T23:29:33.133Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-02-24T23:29:33.684Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-02-24T23:51:13.934Z [INFO] DotAgents VSCode is now active
+2026-02-24T23:51:14.389Z [INFO] Installed rule for antigravity
+2026-02-24T23:51:14.403Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-02-24T23:51:14.953Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-02-24T23:51:36.090Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-02-24T23:51:36.097Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-02-25T00:25:09.028Z [INFO] Installed rule for antigravity
+2026-02-25T00:25:09.035Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-02-25T00:25:09.042Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-02-25T00:28:47.316Z [INFO] DotAgents VSCode is now active
+2026-02-25T00:29:01.767Z [INFO] Installed rule for antigravity
+2026-02-25T00:29:01.772Z [INFO] Migration: copying .agent → .agents (bridge)
+2026-02-25T00:29:01.789Z [INFO] Migration: copied .agent → .agents
+2026-02-25T00:29:01.789Z [INFO] Project not initialized. Running initialization...
+2026-02-25T00:29:01.794Z [INFO] Initialization complete.
+2026-02-25T00:29:01.837Z [INFO] Installed rule for antigravity
+2026-02-25T00:29:01.849Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-25T00:29:02.400Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-25T00:29:31.503Z [INFO] DotAgents VSCode is now active
+2026-02-25T00:29:32.312Z [INFO] Installed rule for antigravity
+2026-02-25T00:29:32.425Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-25T00:29:32.954Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-25T00:29:48.671Z [INFO] DotAgents VSCode is now active
+2026-02-25T00:29:53.137Z [INFO] Installed rule for antigravity
+2026-02-25T00:29:53.142Z [INFO] Migration: copying .agent → .agents (bridge)
+2026-02-25T00:29:53.158Z [INFO] Migration: copied .agent → .agents
+2026-02-25T00:29:53.158Z [INFO] Project not initialized. Running initialization...
+2026-02-25T00:29:53.162Z [INFO] Initialization complete.
+2026-02-25T00:29:53.205Z [INFO] Installed rule for antigravity
+2026-02-25T00:29:53.215Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-25T00:29:53.765Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-25T00:30:07.404Z [INFO] Installed rule for cursor
+2026-02-25T00:30:07.416Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-25T00:30:07.425Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /var/home/snor/Documents/libs/supabase-kit

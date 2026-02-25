@@ -1,5 +1,5 @@
 {
-	"name": "dotagents",
+	"name": "@dotagents/vscode",
 	"type": "module",
 	"private": true,
 	"devDependencies": {

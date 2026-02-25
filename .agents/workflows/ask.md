@@ -1,7 +1,6 @@
 ---
 description: Workflow for answering technical questions, investigating architecture, or performing code audits.
 ---
-
 Use this workflow when the user has technical questions about the system's operation or needs a detailed explanation.
 
 1. **Context Investigation**: Use search tools to find the exact implementation related to the query.

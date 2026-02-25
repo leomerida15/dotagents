@@ -1,14 +1,19 @@
 {
-	"name": "@dotagents/vscode",
-	"displayName": "DotAgents VSCode",
-	"description": "VSCode extension for DotAgents context synchronization",
-	"version": "0.0.1",
-	"publisher": "snor",
+	"name": "dotagents",
+	"displayName": "dotAgents",
+	"description": "dotAgents is a IA settings synchronization extension for IDEs fork from vscode.",
+	"version": "0.0.4",
+	"icon": "access/logo.png",
+	"publisher": "GobernAI",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/GobernAI/dotagents.git"
+	},
 	"engines": {
 		"vscode": "^1.85.0"
 	},
 	"categories": [
-		"Other"
+		"AI"
 	],
 	"activationEvents": [
 		"onStartupFinished"
@@ -29,6 +34,11 @@
 				"command": "dotagents-vscode.addAgent",
 				"title": "DotAgents: Add Agent/IDE Manually",
 				"icon": "$(plus)"
+			},
+			{
+				"command": "dotagents-vscode.configureAgent",
+				"title": "DotAgents: Configure Active Agents",
+				"icon": "$(settings)"
 			}
 		],
 		"configuration": {
@@ -48,7 +58,7 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "bun run build",
+		"prepublish": "bun run -b bunstart.publich.ts",
 		"build": "bun run -b bunstart.build.ts",
 		"watch": "bun build ./src/extension.ts --outdir ./dist --target node --external vscode --watch",
 		"lint": "eslint src --ext ts",

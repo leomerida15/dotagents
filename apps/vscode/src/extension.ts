@@ -487,6 +487,15 @@ export function activate(context: vscode.ExtensionContext) {
 		await addAgent.execute();
 	});
 
+	const configureAgentCommand = vscode.commands.registerCommand('dotagents-vscode.configureAgent', async () => {
+		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+		if (!workspaceRoot) {
+			vscode.window.showErrorMessage('No workspace folder open');
+			return;
+		}
+		await selectActiveAgent(workspaceRoot);
+	});
+
 	const menuCommand = vscode.commands.registerCommand('dotagents-vscode.showMenu', () => {
 		vscode.window.showQuickPick([
 			{ label: '$(sync) Synchronize Now', id: 'sync' },
@@ -499,12 +508,7 @@ export function activate(context: vscode.ExtensionContext) {
 			} else if (selection?.id === 'add') {
 				vscode.commands.executeCommand('dotagents-vscode.addAgent');
 			} else if (selection?.id === 'setup') {
-				const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-				if (!workspaceRoot) {
-					vscode.window.showErrorMessage('No workspace folder open');
-					return;
-				}
-				selectActiveAgent(workspaceRoot);
+				vscode.commands.executeCommand('dotagents-vscode.configureAgent');
 			} else if (selection?.id === 'prompt') {
 				const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 				if (!workspaceRoot) {
@@ -518,7 +522,7 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	context.subscriptions.push(syncCommand, addAgentCommand, menuCommand, ideWatcher, agentsWatcher);
+	context.subscriptions.push(syncCommand, addAgentCommand, configureAgentCommand, menuCommand, ideWatcher, agentsWatcher);
 
 	// 4. Ejecutar sincronización inicial y configurar watchers (cuando el workspace esté listo)
 	const runInitialSync = async () => {

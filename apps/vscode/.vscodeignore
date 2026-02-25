@@ -1,0 +1,12 @@
+.vscode/**
+.vscode-test/**
+out/**
+src/**
+scripts/**
+.gitignore
+.yarnignore
+tsconfig.json
+bunstart.build.ts
+**/*.map
+**/*.ts
+tests/**

@@ -1,0 +1,49 @@
+name: Deploy VSCode Extension
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - vscode/main
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./apps/vscode
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Verify access/make_rule_prompt.md exists
+        run: |
+          if [ -f "access/make_rule_prompt.md" ]; then
+            echo "Access documentation exists."
+          else
+            echo "Error: access/make_rule_prompt.md not found!"
+            exit 1
+          fi
+
+      - name: Rename package for deployment
+        run: |
+          sed -i 's/"name": "@dotagents\/vscode"/"name": "dotagents"/' package.json
+          echo "Package name updated for publishing:"
+          grep '"name"' package.json
+
+      - name: Install dependencies
+        # Install at monorepo root
+        working-directory: ./
+        run: bun install
+
+      - name: Publish to VSCode Marketplace
+        run: bunx @vscode/vsce publish --no-dependencies -p ${{ secrets.VSCE_PAT }}

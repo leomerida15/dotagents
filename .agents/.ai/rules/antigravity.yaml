@@ -1,0 +1,41 @@
+version: "1.0"
+agent:
+  id: "antigravity"
+  name: "Antigravity"
+
+# Agent paths: workspace (detection/sync) and home (global config)
+paths:
+  - path: ".agent/"
+    scope: "workspace"
+    type: "directory"
+    purpose: "marker"
+  - path: ".gemini/antigravity"
+    scope: "home"
+    type: "directory"
+    purpose: "config"
+
+# Bidirectional Flow Definition
+mapping:
+  # INBOUND: From Agent to Universal .agents Bridge
+  inbound:
+    - from: "rules/"
+      to: "rules/"
+      format: "directory"
+    - from: "skills/"
+      to: "skills/"
+      format: "directory"
+    - from: "workflows/"
+      to: "workflows/"
+      format: "directory"
+
+  # OUTBOUND: From Universal .agents Bridge to Agent
+  outbound:
+    - from: "rules/"
+      to: "rules/"
+    - from: "skills/"
+      to: "skills/"
+    - from: "workflows/"
+      to: "workflows/"
+
+# Universal storage folder target
+target_standard: ".agents/"
