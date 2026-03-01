@@ -19,7 +19,12 @@ interface YamlSchema {
 	paths?: PathEntry[];
 }
 
-const RULES_DIR = join(process.cwd(), '..', '..', 'rules');
+const REPO_ROOT = join(process.cwd(), '..', '..');
+const RULES_DIR_CANDIDATES = [
+	join(REPO_ROOT, '.agents', 'rules'),
+	join(REPO_ROOT, 'rules'),
+	join(REPO_ROOT, '.agents', '.ai', 'rules'),
+];
 const OUT_PATH = join(
 	process.cwd(),
 	'src',
@@ -78,14 +83,25 @@ ${pathsLiteral ? `    ${pathsLiteral},\n` : ''}  }`;
 }
 
 async function main(): Promise<void> {
-	let entries: { name: string }[];
-	try {
-		entries = (await readdir(RULES_DIR, { withFileTypes: true }))
-			.filter((e) => e.isFile() && e.name.endsWith('.yaml'))
-			.map((e) => ({ name: e.name }));
-	} catch (err) {
-		console.error('Failed to read rules dir:', RULES_DIR, err);
-		process.exit(1);
+	let rulesDir: string | null = null;
+	let entries: { name: string }[] = [];
+	for (const candidate of RULES_DIR_CANDIDATES) {
+		try {
+			const dirEntries = await readdir(candidate, { withFileTypes: true });
+			rulesDir = candidate;
+			entries = dirEntries
+				.filter((e) => e.isFile() && e.name.endsWith('.yaml'))
+				.map((e) => ({ name: e.name }));
+			break;
+		} catch {
+			// Try next candidate.
+		}
+	}
+
+	if (rulesDir == null) {
+		console.warn(
+			`No rules directory found. Looked in: ${RULES_DIR_CANDIDATES.join(', ')}. Generating empty known agents list.`,
+		);
 	}
 
 	const knownAgents: Array<{
@@ -96,7 +112,7 @@ async function main(): Promise<void> {
 	}> = [];
 
 	for (const { name } of entries) {
-		const filePath = join(RULES_DIR, name);
+		const filePath = join(rulesDir ?? '', name);
 		let content: string;
 		try {
 			content = await readFile(filePath, 'utf-8');
@@ -127,12 +143,13 @@ async function main(): Promise<void> {
 			paths != null && paths.length > 0
 				? (() => {
 						const ws = paths.filter((p) => p.scope === 'workspace');
-						const m = ws.find((p) => p.purpose === 'marker' || p.purpose === 'sync_source');
+						const m = ws.find(
+							(p) => p.purpose === 'marker' || p.purpose === 'sync_source',
+						);
 						return (m ?? ws[0])?.path;
 					})()
 				: null;
-		const sourceRoot =
-			sourceRootFromPaths ?? agent?.source_root ?? schema.source_root ?? '.';
+		const sourceRoot = sourceRootFromPaths ?? agent?.source_root ?? schema.source_root ?? '.';
 		const workspaceMarker = deriveWorkspaceMarker(paths, sourceRoot);
 		const configPath = deriveConfigPath(paths, sourceRoot);
 		knownAgents.push({
