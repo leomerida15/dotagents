@@ -1,14 +1,17 @@
 {
   "manifest": {
-    "lastProcessedAt": 1771979109041,
-    "lastActiveAgent": "antigravity",
-    "currentAgent": "antigravity",
+    "lastProcessedAt": 1772331926820,
+    "lastActiveAgent": "opencode",
+    "currentAgent": "opencode",
     "agents": {
       "antigravity": {
-        "lastProcessedAt": 1771979109041
+        "lastProcessedAt": 1772028237680
       },
       "cursor": {
         "lastProcessedAt": 0
+      },
+      "opencode": {
+        "lastProcessedAt": 1772331926820
       }
     }
   },
@@ -24,6 +27,13 @@
       "id": "cursor",
       "name": "cursor",
       "sourceRoot": ".cursor",
+      "inbound": [],
+      "outbound": []
+    },
+    {
+      "id": "opencode",
+      "name": "opencode",
+      "sourceRoot": ".",
       "inbound": [],
       "outbound": []
     }

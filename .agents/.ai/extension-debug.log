@@ -175,3 +175,31 @@
 2026-02-25T00:30:07.404Z [INFO] Installed rule for cursor
 2026-02-25T00:30:07.416Z [INFO] [DiffSyncAdapter] syncOutboundAgent done cursor workspaceRoot /var/home/snor/Documents/libs/supabase-kit
 2026-02-25T00:30:07.425Z [INFO] [DiffSyncAdapter] currentAgent set to cursor workspaceRoot /var/home/snor/Documents/libs/supabase-kit
+2026-02-25T14:03:56.782Z [INFO] DotAgents VSCode is now active
+2026-02-25T14:03:57.114Z [INFO] Installed rule for antigravity
+2026-02-25T14:03:57.127Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-02-25T14:03:57.681Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-02-27T22:31:29.399Z [INFO] DotAgents VSCode is now active
+2026-02-27T22:56:33.722Z [INFO] Installed rule for antigravity
+2026-02-27T22:56:33.726Z [INFO] Migration: copying .agent → .agents (bridge)
+2026-02-27T22:56:33.733Z [INFO] Migration: copied .agent → .agents
+2026-02-27T22:56:33.734Z [INFO] Project not initialized. Running initialization...
+2026-02-27T22:56:33.737Z [INFO] Initialization complete.
+2026-02-27T22:56:33.779Z [INFO] Installed rule for antigravity
+2026-02-27T22:56:33.788Z [INFO] [DiffSyncAdapter] currentAgent set to antigravity workspaceRoot /var/home/snor/Documents/libs/bunstart
+2026-02-27T22:56:34.329Z [INFO] [DiffSyncAdapter] syncOutboundAgent done antigravity workspaceRoot /var/home/snor/Documents/libs/bunstart
+2026-02-28T23:41:14.132Z [INFO] DotAgents VSCode is now active
+2026-02-28T23:49:14.028Z [INFO] [DiffSyncAdapter] syncOutboundAgent done opencode workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-02-28T23:49:14.062Z [INFO] [DiffSyncAdapter] currentAgent set to opencode workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-03-01T00:42:18.821Z [INFO] DotAgents VSCode is now active
+2026-03-01T00:42:31.317Z [INFO] [DiffSyncAdapter] syncOutboundAgent done opencode workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-03-01T00:42:31.345Z [INFO] [DiffSyncAdapter] currentAgent set to opencode workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-03-01T02:24:16.465Z [INFO] [DiffSyncAdapter] syncOutboundAgent done opencode workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-03-01T02:24:46.596Z [INFO] [DiffSyncAdapter] syncOutboundAgent done opencode workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-03-01T02:24:55.951Z [INFO] [DiffSyncAdapter] syncOutboundAgent done opencode workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-03-01T02:25:10.320Z [INFO] [DiffSyncAdapter] syncOutboundAgent done opencode workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-03-01T02:25:26.821Z [INFO] [DiffSyncAdapter] syncOutboundAgent done opencode workspaceRoot /var/home/snor/Documents/libs/dotagents
+2026-03-01T02:27:44.421Z [INFO] DotAgents VSCode is now active
+2026-03-01T02:27:48.411Z [INFO] DotAgents VSCode is now active
+2026-03-01T02:28:01.792Z [INFO] DotAgents VSCode is now active
+2026-03-01T02:29:11.920Z [INFO] DotAgents VSCode is now active

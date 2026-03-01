@@ -36,3 +36,5 @@ export * from './app/ports/IPullOutbound';
 // Infrastructure - Adapters
 export * from './infra/adapters/BunFileSystem';
 export * from './infra/adapters/DefaultSyncInterpreter';
+export * from './infra/adapters/JsonSyncInterpreter';
+export * from './infra/adapters/CompositeSyncInterpreter';

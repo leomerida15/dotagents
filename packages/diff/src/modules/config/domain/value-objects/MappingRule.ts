@@ -3,6 +3,8 @@ export enum MappingFormat {
 	DIRECTORY = 'directory',
 	JSON = 'json',
 	MARKDOWN = 'markdown',
+	JSON_TRANSFORM = 'json-transform',
+	JSON_SPLIT = 'json-split',
 }
 
 export interface MappingRuleProps {
@@ -13,6 +15,10 @@ export interface MappingRuleProps {
 	sourceExt?: string;
 	/** Extension in target (e.g. .md). Must include leading dot. */
 	targetExt?: string;
+	/** JSONPath for data extraction (if format involves JSON transformation) */
+	extract?: string;
+	/** Transformation adapter name (e.g. mcp-cursor, agent-mdc) */
+	adapter?: string;
 }
 
 /**
@@ -24,6 +30,8 @@ export class MappingRule {
 	private formatType: MappingFormat;
 	private sourceExtValue?: string;
 	private targetExtValue?: string;
+	private extractValue?: string;
+	private adapterValue?: string;
 
 	constructor({
 		from,
@@ -31,12 +39,16 @@ export class MappingRule {
 		format = MappingFormat.FILE,
 		sourceExt,
 		targetExt,
+		extract,
+		adapter,
 	}: MappingRuleProps) {
 		this.fromPath = from;
 		this.toPath = to;
 		this.formatType = format;
 		this.sourceExtValue = sourceExt;
 		this.targetExtValue = targetExt;
+		this.extractValue = extract;
+		this.adapterValue = adapter;
 	}
 
 	public static create(props: MappingRuleProps): MappingRule {
@@ -83,6 +95,14 @@ export class MappingRule {
 		return this.targetExtValue;
 	}
 
+	public get extract(): string | undefined {
+		return this.extractValue;
+	}
+
+	public get adapter(): string | undefined {
+		return this.adapterValue;
+	}
+
 	/**
 	 * Compares if two rules are identical.
 	 */
@@ -92,7 +112,9 @@ export class MappingRule {
 			this.to === other.to &&
 			this.format === other.format &&
 			this.sourceExt === other.sourceExt &&
-			this.targetExt === other.targetExt
+			this.targetExt === other.targetExt &&
+			this.extract === other.extract &&
+			this.adapter === other.adapter
 		);
 	}
 }

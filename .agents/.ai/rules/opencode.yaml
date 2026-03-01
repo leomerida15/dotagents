@@ -1,0 +1,47 @@
+version: "1.0"
+agent:
+  id: "opencode"
+  name: "Opencode"
+
+paths:
+  - path: ".opencode"
+    scope: "workspace"
+    type: "file"
+    purpose: "marker"
+  - path: ".config/opencode"
+    scope: "home"
+    type: "directory"
+    purpose: "config"
+
+mapping:
+  inbound:
+    - from: "rules/"
+      to: "rules/"
+      format: "directory"
+    - from: "skills/"
+      to: "skills/"
+      format: "directory"
+    - from: "workflows/"
+      to: "workflows/"
+      format: "directory"
+    - from: "opencode.json"
+      to: "mcp.json"
+      format: "json-transform"
+      extract: "$.mcp"
+      adapter: "mcp-standard"
+    - from: "opencode.json"
+      to: "rules/"
+      format: "json-split"
+      extract: "$.agent"
+      adapter: "agent-json"
+      target_ext: ".json"
+
+  outbound:
+    - from: "rules/"
+      to: "rules/"
+    - from: "skills/"
+      to: "skills/"
+    - from: "workflows/"
+      to: "workflows/"
+
+target_standard: ".agents/"

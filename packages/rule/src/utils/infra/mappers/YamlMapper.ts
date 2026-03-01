@@ -16,6 +16,8 @@ interface YamlMappingItem {
 	format?: string;
 	source_ext?: string;
 	target_ext?: string;
+	extract?: string;
+	adapter?: string;
 }
 
 // Basic schema validation for YAML content
@@ -69,10 +71,10 @@ function toMappingRule(m: YamlMappingItem): MappingRule {
 		from: m.from,
 		to: m.to,
 		format: m.format,
-		...(m.source_ext != null && m.target_ext != null && {
-			sourceExt: m.source_ext,
-			targetExt: m.target_ext,
-		}),
+		sourceExt: m.source_ext,
+		targetExt: m.target_ext,
+		extract: m.extract,
+		adapter: m.adapter,
 	});
 }
 
@@ -89,8 +91,7 @@ export class YamlMapper {
 		const paths = agent.paths ?? schema.paths;
 		const fromPaths =
 			paths != null && paths.length > 0 ? deriveSourceRootFromPaths(paths) : undefined;
-		const sourceRoot =
-			fromPaths ?? agent.source_root ?? schema.source_root ?? '.';
+		const sourceRoot = fromPaths ?? agent.source_root ?? schema.source_root ?? '.';
 		const mapping = agent.mapping ?? schema.mapping;
 		const inbound = mapping?.inbound ?? [];
 		const outbound = mapping?.outbound ?? [];
