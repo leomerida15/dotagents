@@ -1,24 +1,24 @@
 # DotAgents
 
-Herramienta para **pasar entre IDEs, extensiones y TUIs con agentes de IA**: sincroniza los archivos del directorio de configuración de cada entorno (la carpeta que define el contexto del agente en ese IDE).
+Tool for **switching between IDEs, extensions, and TUIs with AI agents**: it syncs the configuration directory of each environment (the folder that defines the agent context in that IDE).
 
-Flujo: **origen → `.agents/` (puente) → destino**. Ejemplo: `.cursor/` → `.agents/` → `.agent/` para ir de Cursor a Antigravity. El motor de sincronización de archivos es el paquete **diff** (`packages/diff`).
+Flow: **source → `.agents/` (bridge) → target**. Example: `.cursor/` → `.agents/` → `.agent/` to go from Cursor to Antigravity. The file sync engine is the **diff** package (`packages/diff`).
 
-## Objetivo
+## Goal
 
-Sincronizar los directorios de configuración entre:
+Sync configuration directories across:
 
 - **IDEs:** Cursor, Antigravity, VSCode  
-- **Extensiones:** Kilo Code, Cline  
+- **Extensions:** Kilo Code, Cline  
 - **TUIs:** OpenCode, Claude Code  
 
-Cada herramienta usa un directorio de configuración con carpetas y archivos propios; DotAgents usa `.agents/` como formato intermedio para pasar de uno a otro.
+Each tool has its own config directory layout; DotAgents uses `.agents/` as the intermediate format to move from one to another.
 
-## Cómo lo hacemos
+## How we do it
 
-Cada herramienta tiene un **Project Path** (en el repo) y opcionalmente un **Global Path** (en el usuario). La sincronización se hace entre ese path y el puente `.agents/`.
+Each tool has a **Project Path** (in the repo) and optionally a **Global Path** (in the user’s home). Sync runs between that path and the `.agents/` bridge.
 
-| NOTA: listado extraído de [vercel-labs/skills](https://github.com/vercel-labs/skills) |
+| NOTE: list extracted from [vercel-labs/skills](https://github.com/vercel-labs/skills) |
 
 | Agent                      | `--agent`                   | Project Path    | Global Path              |
 | -------------------------- | --------------------------- | --------------- | ------------------------ |
@@ -26,7 +26,7 @@ Cada herramienta tiene un **Project Path** (en el repo) y opcionalmente un **Glo
 | Antigravity                | `antigravity`               | `.agent/`       | `~/.gemini/antigravity/` |
 | Augment                    | `augment`                   | `.augment/`     | `~/.augment/`            |
 | Claude Code                | `claude-code`               | `.claude/`      | `~/.claude/`             |
-| OpenClaw                   | `openclaw`                  | (vacío)         | `~/.moltbot/`            |
+| OpenClaw                   | `openclaw`                  | (empty)         | `~/.moltbot/`            |
 | Cline                      | `cline`                     | `.cline/`       | `~/.cline/`               |
 | CodeBuddy                  | `codebuddy`                 | `.codebuddy/`   | `~/.codebuddy/`          |
 | Codex                      | `codex`                     | `.agents/`      | `~/.codex/`             |
@@ -60,19 +60,19 @@ Cada herramienta tiene un **Project Path** (en el repo) y opcionalmente un **Glo
 | Pochi                      | `pochi`                     | `.pochi/`       | `~/.pochi/`               |
 | AdaL                       | `adal`                      | `.adal/`        | `~/.adal/`                |
 
-## Partes del proyecto
+## Project structure
 
-1. **Monorepo** en Bun.js, administrado con [bunstart](https://github.com/bunstart).
-2. **`./context`** — persistencia de contexto local del proyecto durante el desarrollo.
-3. **`.agents/`** — estándar **Puente Universal (Universal Bridge)** para sincronización entre agentes de IA; tiene su propio formato canónico (p. ej. `rules/`, `skills/`, `mcp/`), no carpetas por agente.
-4. **Arquitectura hexagonal** — puertos y adaptadores en los módulos.
-5. **Package `diff`** — core del motor de sincronización de directorios (aplica reglas inbound/outbound entre origen y `.agents/`).
-6. **Dos aplicaciones:** extensión para VSCode y CLI.
+1. **Monorepo** on Bun.js, managed with [bunstart](https://github.com/bunstart).
+2. **`./context`** — local project context persistence during development.
+3. **`.agents/`** — **Universal Bridge** standard for syncing between AI agents; canonical layout (e.g. `rules/`, `skills/`, `mcp/`), not per-agent folders.
+4. **Hexagonal architecture** — ports and adapters in the modules.
+5. **`diff` package** — core directory sync engine (applies inbound/outbound rules between source and `.agents/`).
+6. **Two applications:** VSCode extension and CLI.
 
-## Desarrollo
+## Development
 
 ```bash
 bun install
 ```
 
-Ver cada app o package para comandos de ejecución y tests.
+See each app or package for run and test commands.

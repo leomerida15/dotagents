@@ -1,15 +1,17 @@
 # diff
 
-To install dependencies:
+Core directory sync engine for DotAgents. Applies inbound/outbound rules between a tool’s config directory and the `.agents/` bridge (see repo root [README.md](../../README.md)).
+
+## Setup
 
 ```bash
 bun install
 ```
 
-To run:
+## Run
 
 ```bash
 bun run index.ts
 ```
 
-This project was created using `bun init` in bun v1.3.9. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+[Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
