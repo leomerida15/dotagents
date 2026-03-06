@@ -16,6 +16,22 @@
         "DOTAGENTS_LOCAL_PATH": "${workspaceFolder}/rules"
       },
       "preLaunchTask": "bun: build vscode"
+    },
+    {
+      "name": "Extension E2E Tests",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "${workspaceFolder}/../supabase-kit",
+        "--extensionDevelopmentPath=${workspaceFolder}/apps/vscode",
+        "--extensionTestsPath=${workspaceFolder}/apps/vscode/e2e/suite/index"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/apps/vscode/dist/**/*.js",
+        "${workspaceFolder}/apps/vscode/e2e/suite/**/*.js"
+      ],
+      "preLaunchTask": "bun: build vscode"
     }
   ]
 }

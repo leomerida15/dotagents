@@ -1,13 +1,15 @@
 ---
-description: plan de accion sub globar para la ejecucion de una tarea muy extensa.
+description: Sub-global action plan for executing a very extensive task.
 ---
 
-Debes desarrollar un plan basado en el documentos spint que se te esta compartiendo previamente.
+You must develop a plan based on the sprint document that is being shared with you beforehand.
 
-1. antes de jecutar la creacion del plan debes plantearle al usuario todas las dudas que tengas.
+1. Before creating the plan, you must raise any questions or doubts you have with the user.
 
-2. el plan debe basarce en los items que estan en le sprint.
+2. The plan must be based on the items listed in the sprint.
 
-3. el plan debe tener como paso final modificar el documetno sprint o documento de checklist documentado en el spirnt.
+3. The plan must have as its final step the modification of the sprint document or the checklist document referenced in the sprint.
 
-nota: si el sprint contiene una tabla de check debes editar el status de los items de es tabla, pero el sprint puede indicarte que gestiona este status en archivo externo.
+Note: if the sprint contains a check table, you must edit the status of the items in that table, but the sprint may indicate that this status is managed in an external file.
+
+4. The plan must always include all TODO items (TodoWrite) corresponding to the sprint tasks, so that progress is tracked at all times.

@@ -16,176 +16,439 @@ import { ExtensionLogger } from './modules/orchestrator/infra/ExtensionLogger';
 import { IdeWatcherService } from './modules/orchestrator/infra/IdeWatcherService';
 import { AgentsWatcherService } from './modules/orchestrator/infra/AgentsWatcherService';
 import { IgnoredPathsRegistry } from './modules/orchestrator/infra/IgnoredPathsRegistry';
-import { detectAgentFromHostApp, getHostAppName, isHostIdeRecognized } from './modules/orchestrator/infra/AgentHostDetector';
+import {
+	detectAgentFromHostApp,
+	getHostAppName,
+	isHostIdeRecognized,
+} from './modules/orchestrator/infra/AgentHostDetector';
 import { debounce } from './modules/orchestrator/utils/debounce';
 import { Agent, InitializeProjectUseCase } from '@dotagents/diff';
 import { ClientModule } from '@dotagents/rule';
-import { WORKSPACE_KNOWN_AGENTS, getWorkspaceMarker } from './modules/orchestrator/domain/WorkspaceAgents';
+import {
+	WORKSPACE_KNOWN_AGENTS,
+	getWorkspaceMarker,
+} from './modules/orchestrator/domain/WorkspaceAgents';
 import { StatusBarManager } from './modules/ui/infra/StatusBarManager';
 import { SyncStatus } from './modules/orchestrator/domain/SyncState';
 
-/**
- * Entry point para la extensión DotAgents VSCode.
- * Orquestador principal de la sincronización entre el bridge universal .agents y el IDE local.
- */
-export function activate(context: vscode.ExtensionContext) {
-	const logger = new ExtensionLogger({
-		getWorkspaceRoot: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
-	});
-	logger.info('DotAgents VSCode is now active');
+const MAKE_RULE_ACTION = 'Open make_rule.md';
+const ADD_AGENT_ACTION = 'Add Agent';
+const COOLDOWN_MS = 300;
 
-	async function ensureMakeRulePrompt(workspaceRoot: string, extContext: vscode.ExtensionContext): Promise<void> {
-		const targetPath = join(workspaceRoot, '.agents', '.ai', 'rules', 'make_rule_prompt.md');
-		if (existsSync(targetPath)) return;
-		const templatePath = extContext.asAbsolutePath('access/make_rule_prompt.md');
-		const content = await readFile(templatePath, 'utf-8');
-		await mkdir(join(workspaceRoot, '.agents', '.ai', 'rules'), { recursive: true });
-		await writeFile(targetPath, content, 'utf-8');
+/**
+ * Ensures the make_rule_prompt.md template exists in the workspace.
+ *
+ * @param workspaceRoot The root of the workspace
+ * @param extContext The extension context
+ */
+async function ensureMakeRulePrompt(
+	workspaceRoot: string,
+	extContext: vscode.ExtensionContext,
+): Promise<void> {
+	const targetPath = join(workspaceRoot, '.agents', '.ai', 'rules', 'make_rule_prompt.md');
+	if (existsSync(targetPath)) return;
+	const templatePath = extContext.asAbsolutePath('access/make_rule_prompt.md');
+	const content = await readFile(templatePath, 'utf-8');
+	await mkdir(join(workspaceRoot, '.agents', '.ai', 'rules'), { recursive: true });
+	await writeFile(targetPath, content, 'utf-8');
+}
+
+/**
+ * Properties for initializing the ExtensionApp.
+ */
+interface ExtensionAppProps {
+	/** The VSCode extension context */
+	context: vscode.ExtensionContext;
+	/** The set of infrastructure dependencies injected into the app */
+	infrastructure: {
+		logger: ExtensionLogger;
+		statusBar: StatusBarManager;
+		configRepo: NodeConfigRepository;
+		syncEngine: DiffSyncAdapter;
+		getMissingRulesAgentIds: GetMissingRulesAgentIdsUseCase;
+		ignoredPaths: IgnoredPathsRegistry;
+		ruleProvider: GitHubRuleProvider;
+		agentScanner: FsAgentScanner;
+	};
+}
+
+/**
+ * Core application class orchestrating the DotAgents VSCode Extension.
+ * Separates concerns into distinct methods for clean initialization.
+ */
+class ExtensionApp {
+	private readonly context: vscode.ExtensionContext;
+	private logger: ExtensionLogger;
+	private e2eAgentId: string | null;
+	private e2eSyncDirection: 'inbound' | 'outbound' | null;
+	private isE2EMode: boolean;
+
+	private statusBar!: StatusBarManager;
+	private configRepo!: NodeConfigRepository;
+	private syncEngine!: DiffSyncAdapter;
+	private getMissingRulesAgentIds!: GetMissingRulesAgentIdsUseCase;
+	private ignoredPaths!: IgnoredPathsRegistry;
+
+	private inboundAffectedPaths = new Set<string>();
+	private outboundAffectedPaths = new Set<string>();
+	private inboundCooldownUntil = 0;
+	private outboundCooldownUntil = 0;
+	private hasNotifiedUnrecognizedIdeThisSession = false;
+
+	private ideWatcher!: IdeWatcherService;
+	private agentsWatcher!: AgentsWatcherService;
+	private ruleProvider!: GitHubRuleProvider;
+	private agentScanner!: FsAgentScanner;
+
+	private initializeProject!: InitializeProjectUseCase;
+	private fetchAndInstallRules!: FetchAndInstallRulesUseCase;
+	private migrateExistingAgentsToBridge!: MigrateExistingAgentsToBridgeUseCase;
+	private startSync!: StartSyncOrchestration;
+	private addAgent!: AddAgentManually;
+
+	/**
+	 * Creates an instance of ExtensionApp with the provided properties.
+	 * @param props - The properties containing the extension context and infrastructure
+	 */
+	constructor({ context, infrastructure }: ExtensionAppProps) {
+		this.context = context;
+		this.logger = infrastructure.logger;
+		this.statusBar = infrastructure.statusBar;
+		this.configRepo = infrastructure.configRepo;
+		this.syncEngine = infrastructure.syncEngine;
+		this.getMissingRulesAgentIds = infrastructure.getMissingRulesAgentIds;
+		this.ignoredPaths = infrastructure.ignoredPaths;
+		this.ruleProvider = infrastructure.ruleProvider;
+		this.agentScanner = infrastructure.agentScanner;
+
+		this.ideWatcher = new IdeWatcherService({
+			onChange: (uri: vscode.Uri) => this.scheduleInboundSync(uri),
+			onCreate: (uri: vscode.Uri) => this.scheduleInboundSync(uri),
+			onDelete: (uri: vscode.Uri) => this.scheduleInboundSync(uri),
+		});
+
+		this.agentsWatcher = new AgentsWatcherService({
+			onChange: (uri: vscode.Uri) => this.scheduleOutboundSync(uri),
+			onCreate: (uri: vscode.Uri) => this.scheduleOutboundSync(uri),
+			onDelete: (uri: vscode.Uri) => this.scheduleOutboundSync(uri),
+		});
+		this.e2eAgentId = process.env.DOTAGENTS_E2E_AGENT?.trim() || null;
+		const direction = process.env.DOTAGENTS_E2E_SYNC_DIRECTION;
+		this.e2eSyncDirection =
+			direction === 'inbound' || direction === 'outbound' ? direction : null;
+		this.isE2EMode = process.env.DOTAGENTS_E2E === '1' || this.e2eAgentId != null;
 	}
 
-	// 1. Inicializar Infraestructura
-	const statusBar = new StatusBarManager({ context });
-	const configRepo = new NodeConfigRepository();
-	const syncEngine = new DiffSyncAdapter({ configRepository: configRepo, logger });
-	const getMissingRulesAgentIds = new GetMissingRulesAgentIdsUseCase({
-		configRepository: configRepo,
-	});
+	/**
+	 * Activates the extension, initializing infrastructure, use cases, commands, and running initial sync.
+	 */
+	public activate() {
+		this.logger.info('DotAgents VSCode is now active');
+		this.initializeUseCases();
+		this.context.subscriptions.push(...registerExtensionCommands(this));
+		this.runInitialSyncAndSetupWatchers();
+	}
 
-	const inboundAffectedPaths = new Set<string>();
-	const outboundAffectedPaths = new Set<string>();
-	const ignoredPaths = new IgnoredPathsRegistry();
-	const COOLDOWN_MS = 300;
-	let inboundCooldownUntil = 0;
-	let outboundCooldownUntil = 0;
-	let hasNotifiedUnrecognizedIdeThisSession = false;
+	/**
+	 * Initializes the use cases (initialize project, fetch rules, sync, etc.).
+	 */
+	private initializeUseCases() {
+		this.initializeProject = new InitializeProjectUseCase({
+			configRepository: this.configRepo,
+			ruleProvider: this.ruleProvider,
+			agentScanner: this.agentScanner,
+		});
 
-	const runReactiveInboundSync = debounce(async () => {
-		const paths = [...inboundAffectedPaths];
-		inboundAffectedPaths.clear();
+		this.fetchAndInstallRules = new FetchAndInstallRulesUseCase({
+			ruleProvider: this.ruleProvider,
+			configRepository: this.configRepo,
+			logger: this.logger,
+		});
+
+		this.migrateExistingAgentsToBridge = new MigrateExistingAgentsToBridgeUseCase({
+			configRepository: this.configRepo,
+			syncProject: this.syncEngine,
+			fileSystem: new NodeFileSystem(),
+			logger: this.logger,
+		});
+
+		this.addAgent = new AddAgentManually({
+			getAgentsForPicker: async (workspaceRoot: string) => {
+				const baseAgentsFromKnown = WORKSPACE_KNOWN_AGENTS.map((k) =>
+					Agent.create({
+						id: k.id,
+						name: k.id,
+						sourceRoot: getWorkspaceMarker(k),
+						inbound: [],
+						outbound: [],
+					}),
+				);
+				const agents = await this.getMergedAgentsForSelector(
+					workspaceRoot,
+					baseAgentsFromKnown,
+				);
+				return agents.map((a) => ({ id: a.id, label: a.name || a.id }));
+			},
+			onAgentAdded: async (agentId) => {
+				const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+				if (!workspaceRoot) {
+					vscode.window.showErrorMessage('No workspace open.');
+					return;
+				}
+				await this.handleAddAgent(workspaceRoot, agentId);
+			},
+		});
+
+		this.startSync = new StartSyncOrchestration({
+			statusBar: this.statusBar,
+			syncEngine: this.syncEngine,
+			initializeProject: this.initializeProject,
+			migrateExistingAgentsToBridge: this.migrateExistingAgentsToBridge,
+			configRepository: this.configRepo,
+			fetchAndInstallRules: this.fetchAndInstallRules,
+			getMissingRulesAgentIds: this.getMissingRulesAgentIds,
+			notifyMissingRules: this.notifyMissingRules.bind(this),
+			selectActiveAgent: this.selectActiveAgent.bind(this),
+			selectAgentForNewProject: this.selectAgentForNewProject.bind(this),
+			logger: this.logger,
+		});
+	}
+
+	/** Executes the Sync command. */
+	public async executeSyncCommand(): Promise<void> {
+		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+		if (!workspaceRoot) {
+			vscode.window.showErrorMessage('No workspace folder open');
+			return;
+		}
+
+		const direction = await this.showSyncDirectionPicker();
+		if (!direction) return;
+
+		await this.startSync.execute({ direction });
+	}
+
+	/** Executes the Add Agent command. */
+	public async executeAddAgentCommand(): Promise<void> {
+		await this.addAgent.execute();
+	}
+
+	/** Executes the Configure Agent command. */
+	public async executeConfigureAgentCommand(): Promise<void> {
+		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+		if (!workspaceRoot) {
+			vscode.window.showErrorMessage('No workspace folder open');
+			return;
+		}
+
+		await this.selectActiveAgent(workspaceRoot);
+	}
+
+	/** Executes the contextual menu command. */
+	public async executeShowMenuCommand(): Promise<void> {
+		const selection = await vscode.window.showQuickPick([
+			{ label: '$(sync) Synchronize Now', id: 'sync' },
+			{ label: '$(plus) Add Agent/IDE Manually', id: 'add' },
+			{ label: '$(settings) Configure Active Agents', id: 'setup' },
+			{ label: '$(question) Generate Rules Prompt', id: 'prompt' },
+		]);
+
+		if (!selection) return;
+		if (selection.id === 'sync') {
+			await this.executeSyncCommand();
+		} else if (selection.id === 'add') {
+			await this.executeAddAgentCommand();
+		} else if (selection.id === 'setup') {
+			await this.executeConfigureAgentCommand();
+		} else if (selection.id === 'prompt') {
+			const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+			if (!workspaceRoot) {
+				vscode.window.showErrorMessage('No workspace folder open');
+				return;
+			}
+			await ensureMakeRulePrompt(workspaceRoot, this.context);
+			const promptPath = join(
+				workspaceRoot,
+				'.agents',
+				'.ai',
+				'rules',
+				'make_rule_prompt.md',
+			);
+			await vscode.window.showTextDocument(vscode.Uri.file(promptPath), {
+				preview: false,
+			});
+		}
+	}
+
+	/** Returns disposables managed by the core app. */
+	public getCoreDisposables(): vscode.Disposable[] {
+		return [this.ideWatcher, this.agentsWatcher];
+	}
+
+	/**
+	 * Runs the initial synchronization and sets up file watchers for the workspace.
+	 */
+	private runInitialSyncAndSetupWatchers() {
+		const runInitialSync = async () => {
+			this.ideWatcher.dispose();
+			this.agentsWatcher.dispose();
+			const result = await this.startSync.execute();
+			if (!result.completed) return;
+			const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+			if (workspaceRoot) {
+				await ensureMakeRulePrompt(workspaceRoot, this.context);
+				await this.setupWatchers(workspaceRoot);
+				this.setupAgentsWatcher(workspaceRoot);
+			}
+		};
+
+		if (vscode.workspace.workspaceFolders?.length) {
+			runInitialSync();
+		} else {
+			const disposable = vscode.workspace.onDidChangeWorkspaceFolders(() => {
+				if (vscode.workspace.workspaceFolders?.length) {
+					disposable.dispose();
+					runInitialSync();
+				}
+			});
+			this.context.subscriptions.push(disposable);
+		}
+	}
+
+	/**
+	 * Executes reactive inbound synchronization after debouncing.
+	 * Aggregates affected paths and syncs them to the bridge.
+	 */
+	private runReactiveInboundSync = debounce(async () => {
+		const paths = [...this.inboundAffectedPaths];
+		this.inboundAffectedPaths.clear();
 		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 		if (!workspaceRoot) return;
 		try {
-			if (!(await configRepo.exists(workspaceRoot))) return;
-			const config = await configRepo.load(workspaceRoot);
+			if (!(await this.configRepo.exists(workspaceRoot))) return;
+			const config = await this.configRepo.load(workspaceRoot);
 			const activeAgentId = config.manifest.currentAgent ?? detectAgentFromHostApp();
 			if (!activeAgentId) return;
-			const missingIds = await getMissingRulesAgentIds.execute(workspaceRoot, { agentIds: [activeAgentId] });
+			const missingIds = await this.getMissingRulesAgentIds.execute(workspaceRoot, {
+				agentIds: [activeAgentId],
+			});
 			if (missingIds.includes(activeAgentId)) {
-				statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${activeAgentId}`);
+				this.statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${activeAgentId}`);
 				return;
 			}
-			const { writtenPaths } = await syncEngine.syncAgent(workspaceRoot, activeAgentId, paths.length ? paths : undefined);
-			ignoredPaths.add(writtenPaths);
-			outboundCooldownUntil = Date.now() + COOLDOWN_MS;
+			const { writtenPaths } = await this.syncEngine.syncAgent(
+				workspaceRoot,
+				activeAgentId,
+				paths.length ? paths : undefined,
+			);
+			this.ignoredPaths.add(writtenPaths);
+			this.outboundCooldownUntil = Date.now() + COOLDOWN_MS;
 		} catch (e) {
-			logger.error('Reactive inbound sync failed:', e);
+			this.logger.error('Reactive inbound sync failed:', e);
 		}
 	}, 400);
 
-	const runReactiveOutboundSync = debounce(async () => {
-		const paths = [...outboundAffectedPaths];
-		outboundAffectedPaths.clear();
+	/**
+	 * Executes reactive outbound synchronization after debouncing.
+	 * Aggregates affected paths from the bridge and syncs them to the IDE.
+	 */
+	private runReactiveOutboundSync = debounce(async () => {
+		const paths = [...this.outboundAffectedPaths];
+		this.outboundAffectedPaths.clear();
 		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 		if (!workspaceRoot) return;
 		try {
-			if (!(await configRepo.exists(workspaceRoot))) return;
-			const config = await configRepo.load(workspaceRoot);
+			if (!(await this.configRepo.exists(workspaceRoot))) return;
+			const config = await this.configRepo.load(workspaceRoot);
 			const activeAgentId = config.manifest.currentAgent ?? detectAgentFromHostApp();
 			if (!activeAgentId) return;
-			const missingIds = await getMissingRulesAgentIds.execute(workspaceRoot, { agentIds: [activeAgentId] });
+			const missingIds = await this.getMissingRulesAgentIds.execute(workspaceRoot, {
+				agentIds: [activeAgentId],
+			});
 			if (missingIds.includes(activeAgentId)) {
-				statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${activeAgentId}`);
+				this.statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${activeAgentId}`);
 				return;
 			}
-			const { writtenPaths } = await syncEngine.syncOutboundAgent(workspaceRoot, activeAgentId, paths.length ? paths : undefined);
-			ignoredPaths.add(writtenPaths);
-			inboundCooldownUntil = Date.now() + COOLDOWN_MS;
+			const { writtenPaths } = await this.syncEngine.syncOutboundAgent(
+				workspaceRoot,
+				activeAgentId,
+				paths.length ? paths : undefined,
+			);
+			this.ignoredPaths.add(writtenPaths);
+			this.inboundCooldownUntil = Date.now() + COOLDOWN_MS;
 		} catch (e) {
-			logger.error('Reactive outbound sync failed:', e);
+			this.logger.error('Reactive outbound sync failed:', e);
 		}
 	}, 400);
 
-	const scheduleInboundSync = (uri: vscode.Uri) => {
-		if (ignoredPaths.shouldIgnore(uri.fsPath)) return;
-		if (Date.now() < inboundCooldownUntil) return;
-		inboundAffectedPaths.add(uri.fsPath);
-		runReactiveInboundSync();
-	};
-	const scheduleOutboundSync = (uri: vscode.Uri) => {
-		if (ignoredPaths.shouldIgnore(uri.fsPath)) return;
-		if (Date.now() < outboundCooldownUntil) return;
-		outboundAffectedPaths.add(uri.fsPath);
-		runReactiveOutboundSync();
-	};
+	/**
+	 * Schedules an inbound sync for a specific file URI.
+	 *
+	 * @param uri The URI of the changed file
+	 */
+	private scheduleInboundSync(uri: vscode.Uri) {
+		if (this.ignoredPaths.shouldIgnore(uri.fsPath)) return;
+		if (Date.now() < this.inboundCooldownUntil) return;
+		this.inboundAffectedPaths.add(uri.fsPath);
+		this.runReactiveInboundSync();
+	}
 
-	const ideWatcher = new IdeWatcherService({
-		onChange: scheduleInboundSync,
-		onCreate: scheduleInboundSync,
-		onDelete: scheduleInboundSync,
-	});
-	const agentsWatcher = new AgentsWatcherService({
-		onChange: scheduleOutboundSync,
-		onCreate: scheduleOutboundSync,
-		onDelete: scheduleOutboundSync,
-	});
-	const ruleProvider = new GitHubRuleProvider({ logger });
-	const agentScanner = new FsAgentScanner();
+	/**
+	 * Schedules an outbound sync for a specific file URI.
+	 *
+	 * @param uri The URI of the changed file
+	 */
+	private scheduleOutboundSync(uri: vscode.Uri) {
+		if (this.ignoredPaths.shouldIgnore(uri.fsPath)) return;
+		if (Date.now() < this.outboundCooldownUntil) return;
+		this.outboundAffectedPaths.add(uri.fsPath);
+		this.runReactiveOutboundSync();
+	}
 
-	// 2. Inicializar Casos de Uso
-	const initializeProject = new InitializeProjectUseCase({
-		configRepository: configRepo,
-		ruleProvider: ruleProvider,
-		agentScanner: agentScanner
-	});
-
-	const fetchAndInstallRules = new FetchAndInstallRulesUseCase({
-		ruleProvider,
-		configRepository: configRepo,
-		logger,
-	});
-
-	const migrateExistingAgentsToBridge = new MigrateExistingAgentsToBridgeUseCase({
-		configRepository: configRepo,
-		syncProject: syncEngine,
-		fileSystem: new NodeFileSystem(),
-		logger,
-	});
-
-	const MAKE_RULE_ACTION = 'Open make_rule.md';
-
-	const notifyMissingRules = async (workspaceRoot: string, missingAgentIds: string[]): Promise<void> => {
+	private async notifyMissingRules(
+		workspaceRoot: string,
+		missingAgentIds: string[],
+	): Promise<void> {
 		if (missingAgentIds.length === 0) return;
 		const idsList = missingAgentIds.join(', ');
 		const message = `Some tools have no rules installed: ${idsList}. Create rules using the guide below.`;
 		const chosen = await vscode.window.showWarningMessage(message, MAKE_RULE_ACTION);
 		if (chosen === MAKE_RULE_ACTION) {
-			await ensureMakeRulePrompt(workspaceRoot, context);
-			const makeRulePath = join(workspaceRoot, '.agents', '.ai', 'rules', 'make_rule_prompt.md');
+			await ensureMakeRulePrompt(workspaceRoot, this.context);
+			const makeRulePath = join(
+				workspaceRoot,
+				'.agents',
+				'.ai',
+				'rules',
+				'make_rule_prompt.md',
+			);
 			const uri = vscode.Uri.file(makeRulePath);
 			await vscode.window.showTextDocument(uri, { preview: false });
 		}
-	};
+	}
 
-	async function handleAddAgent(workspaceRoot: string, agentId: string): Promise<void> {
-		// 1. Ensure config exists
-		if (!(await configRepo.exists(workspaceRoot))) {
+	private async handleAddAgent(workspaceRoot: string, agentId: string): Promise<void> {
+		if (!(await this.configRepo.exists(workspaceRoot))) {
 			vscode.window.showErrorMessage('Initialize project first (run Sync).');
 			return;
 		}
-		// 2. Load config
-		const config = await configRepo.load(workspaceRoot);
+		const config = await this.configRepo.load(workspaceRoot);
 		const rulesDir = join(workspaceRoot, '.agents', '.ai', 'rules');
 
-		// 3. Verify rule exists
 		let ruleExists = existsSync(join(rulesDir, `${agentId}.yaml`));
 		if (!ruleExists) {
-			// 4. Try fetchAndInstallRules
-			await fetchAndInstallRules.execute(workspaceRoot, { agentIds: [agentId] });
+			await this.fetchAndInstallRules.execute(workspaceRoot, { agentIds: [agentId] });
 			ruleExists = existsSync(join(rulesDir, `${agentId}.yaml`));
 		}
 		if (!ruleExists) {
-			await ensureMakeRulePrompt(workspaceRoot, context);
-			const makeRulePath = join(workspaceRoot, '.agents', '.ai', 'rules', 'make_rule_prompt.md');
+			await ensureMakeRulePrompt(workspaceRoot, this.context);
+			const makeRulePath = join(
+				workspaceRoot,
+				'.agents',
+				'.ai',
+				'rules',
+				'make_rule_prompt.md',
+			);
 			const uri = vscode.Uri.file(makeRulePath);
 			await vscode.window.showTextDocument(uri, { preview: false });
 			vscode.window.showInformationMessage(
@@ -194,7 +457,6 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		// 5. Add agent to config if not present
 		if (!config.agents.find((a) => a.id === agentId)) {
 			const getRule = ClientModule.createGetInstalledRuleUseCase(rulesDir);
 			const rule = await getRule.execute(agentId);
@@ -217,80 +479,76 @@ export function activate(context: vscode.ExtensionContext) {
 			config.addAgent(newAgent);
 		}
 
-		// 6. Persist currentAgent and lastActiveAgent
 		config.manifest.setCurrentAgent(agentId);
 		config.manifest.setLastActiveAgent(agentId);
-		await configRepo.save(config);
+		await this.configRepo.save(config);
 
-		// 7. Sync new
-		const { writtenPaths } = await syncEngine.syncNew(workspaceRoot, agentId);
-		ignoredPaths.add(writtenPaths);
-		inboundCooldownUntil = Date.now() + COOLDOWN_MS;
-		outboundCooldownUntil = Date.now() + COOLDOWN_MS;
+		const { writtenPaths } = await this.syncEngine.syncNew(workspaceRoot, agentId);
+		this.ignoredPaths.add(writtenPaths);
+		this.inboundCooldownUntil = Date.now() + COOLDOWN_MS;
+		this.outboundCooldownUntil = Date.now() + COOLDOWN_MS;
 
-		// 8. Re-register ideWatcher with new agent
-		ideWatcher.dispose();
-		ideWatcher.register(workspaceRoot, agentId, config);
+		this.ideWatcher.dispose();
+		this.ideWatcher.register(workspaceRoot, agentId, config);
 
-		statusBar.update(SyncStatus.SYNCED, `Agent ${agentId} added and synced.`);
+		this.statusBar.update(SyncStatus.SYNCED, `Agent ${agentId} added and synced.`);
 	}
 
-	const baseAgentsFromKnown: Agent[] = WORKSPACE_KNOWN_AGENTS.map((k) =>
-		Agent.create({
-			id: k.id,
-			name: k.id,
-			sourceRoot: getWorkspaceMarker(k),
-			inbound: [],
-			outbound: [],
-		}),
-	);
-
-	const addAgent = new AddAgentManually({
-		getAgentsForPicker: async (workspaceRoot: string) => {
-			const agents = await getMergedAgentsForSelector(workspaceRoot, baseAgentsFromKnown);
-			return agents.map((a) => ({ id: a.id, label: a.name || a.id }));
-		},
-		onAgentAdded: async (agentId) => {
-			const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-			if (!workspaceRoot) {
-				vscode.window.showErrorMessage('No workspace open.');
-				return;
-			}
-			await handleAddAgent(workspaceRoot, agentId);
-		},
-	});
-
-	const ADD_AGENT_ACTION = 'Add Agent';
-	const notifyUnrecognizedIde = async (workspaceRoot: string): Promise<void> => {
-		if (hasNotifiedUnrecognizedIdeThisSession) return;
+	/**
+	 * Notifies the user if the IDE is not recognized and offers options to add it manually or create rules.
+	 * @param workspaceRoot - The root directory of the workspace
+	 */
+	private async notifyUnrecognizedIde(workspaceRoot: string): Promise<void> {
+		if (this.isE2EMode) return;
+		if (this.hasNotifiedUnrecognizedIdeThisSession) return;
 		if (isHostIdeRecognized()) return;
-		hasNotifiedUnrecognizedIdeThisSession = true;
+		this.hasNotifiedUnrecognizedIdeThisSession = true;
 		const appName = getHostAppName();
 		const message = `Tu IDE (${appName}) no está soportado. Puedes añadir reglas manualmente.`;
-		const chosen = await vscode.window.showWarningMessage(message, ADD_AGENT_ACTION, MAKE_RULE_ACTION);
+		const chosen = await vscode.window.showWarningMessage(
+			message,
+			ADD_AGENT_ACTION,
+			MAKE_RULE_ACTION,
+		);
 		if (chosen === ADD_AGENT_ACTION) {
-			await addAgent.execute();
+			await this.addAgent.execute();
 		} else if (chosen === MAKE_RULE_ACTION) {
-			await ensureMakeRulePrompt(workspaceRoot, context);
-			const makeRulePath = join(workspaceRoot, '.agents', '.ai', 'rules', 'make_rule_prompt.md');
+			await ensureMakeRulePrompt(workspaceRoot, this.context);
+			const makeRulePath = join(
+				workspaceRoot,
+				'.agents',
+				'.ai',
+				'rules',
+				'make_rule_prompt.md',
+			);
 			const uri = vscode.Uri.file(makeRulePath);
 			await vscode.window.showTextDocument(uri, { preview: false });
 		}
-	};
+	}
 
-	const showSyncDirectionPicker = async (): Promise<'inbound' | 'outbound' | null> => {
+	/**
+	 * Shows a quick pick to select the synchronization direction (inbound or outbound).
+	 * @returns The selected direction or null if cancelled
+	 */
+	private async showSyncDirectionPicker(): Promise<'inbound' | 'outbound' | null> {
+		if (this.e2eSyncDirection) return this.e2eSyncDirection;
 		type DirectionQuickPickItem = vscode.QuickPickItem & { value: 'inbound' | 'outbound' };
 		const items: DirectionQuickPickItem[] = [
 			{ label: 'IDE → .agents', description: 'Copy from IDE to bridge', value: 'inbound' },
 			{ label: '.agents → IDE', description: 'Copy from bridge to IDE', value: 'outbound' },
 		];
-		const selection = await vscode.window.showQuickPick(items, { placeHolder: 'Select sync direction' });
+		const selection = await vscode.window.showQuickPick(items, {
+			placeHolder: 'Select sync direction',
+		});
 		return selection?.value ?? null;
-	};
+	}
 
-	type AgentQuickPickItem = vscode.QuickPickItem & { id: string };
-
-	async function getAgentsFromCustomRules(workspaceRoot: string): Promise<Agent[]> {
+	/**
+	 * Gets the list of custom agents from the workspace rules directory.
+	 * @param workspaceRoot - The root directory of the workspace
+	 * @returns Array of custom agents
+	 */
+	private async getAgentsFromCustomRules(workspaceRoot: string): Promise<Agent[]> {
 		const rulesDir = join(workspaceRoot, '.agents', '.ai', 'rules');
 		try {
 			const listRules = ClientModule.createListInstalledRulesUseCase(rulesDir);
@@ -309,28 +567,44 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}
 
-	async function getMergedAgentsForSelector(
+	/**
+	 * Merges known base agents with custom agents from the workspace.
+	 * @param workspaceRoot - The root directory of the workspace
+	 * @param baseAgents - The list of base known agents
+	 * @returns Merged list of agents
+	 */
+	private async getMergedAgentsForSelector(
 		workspaceRoot: string,
 		baseAgents: Agent[],
 	): Promise<Agent[]> {
-		const customAgents = await getAgentsFromCustomRules(workspaceRoot);
+		const customAgents = await this.getAgentsFromCustomRules(workspaceRoot);
 		const baseIds = new Set(baseAgents.map((a) => a.id));
 		const customOnly = customAgents.filter((a) => !baseIds.has(a.id));
 		return [...baseAgents, ...customOnly];
 	}
 
-	const selectActiveAgentBase = async (
+	/**
+	 * Shows a picker to select the active agent with optional callback after saving.
+	 * @param workspaceRoot - The root directory of the workspace
+	 * @param onAfterSave - Optional callback to execute after the agent is selected
+	 * @returns The selected agent ID or null if cancelled
+	 */
+	private async selectActiveAgentBase(
 		workspaceRoot: string,
-		onAfterSave?: (agentId: string, config: Awaited<ReturnType<NodeConfigRepository['load']>>) => void | Promise<void>,
-	): Promise<string | null> => {
-		const config = await configRepo.load(workspaceRoot);
-		const agents = await getMergedAgentsForSelector(workspaceRoot, config.agents);
+		onAfterSave?: (
+			agentId: string,
+			config: Awaited<ReturnType<NodeConfigRepository['load']>>,
+		) => void | Promise<void>,
+	): Promise<string | null> {
+		const config = await this.configRepo.load(workspaceRoot);
+		const agents = await this.getMergedAgentsForSelector(workspaceRoot, config.agents);
 
 		if (!agents.length) {
 			vscode.window.showInformationMessage('No agents detected for selection.');
 			return null;
 		}
 
+		type AgentQuickPickItem = vscode.QuickPickItem & { id: string };
 		const items: AgentQuickPickItem[] = agents.map((agent) => ({
 			id: agent.id,
 			label: agent.name || agent.id,
@@ -338,11 +612,21 @@ export function activate(context: vscode.ExtensionContext) {
 			detail: agent.sourceRoot,
 		}));
 
+		if (this.e2eAgentId) {
+			const picked = items.find((item) => item.id === this.e2eAgentId) ?? items[0];
+			if (!picked) return null;
+			config.manifest.setCurrentAgent(picked.id);
+			config.manifest.setLastActiveAgent(picked.id);
+			await this.configRepo.save(config);
+			if (onAfterSave) await onAfterSave(picked.id, config);
+			return picked.id;
+		}
+
 		const hostAgentId = detectAgentFromHostApp();
 		const manifestAgentId = config.manifest.currentAgent;
 		const defaultItem =
-			items.find((item) => item.id === hostAgentId)
-			?? (manifestAgentId ? items.find((item) => item.id === manifestAgentId) : undefined);
+			items.find((item) => item.id === hostAgentId) ??
+			(manifestAgentId ? items.find((item) => item.id === manifestAgentId) : undefined);
 
 		const unrecognizedPlaceholder =
 			hostAgentId === 'vscode' && !isHostIdeRecognized()
@@ -354,9 +638,7 @@ export function activate(context: vscode.ExtensionContext) {
 			quickPick.items = items;
 			quickPick.placeholder = unrecognizedPlaceholder;
 			quickPick.ignoreFocusOut = true;
-			if (defaultItem) {
-				quickPick.activeItems = [defaultItem];
-			}
+			if (defaultItem) quickPick.activeItems = [defaultItem];
 			quickPick.onDidAccept(() => {
 				const picked = quickPick.selectedItems[0] ?? quickPick.activeItems[0];
 				resolve(picked);
@@ -373,32 +655,43 @@ export function activate(context: vscode.ExtensionContext) {
 
 		config.manifest.setCurrentAgent(selection.id);
 		config.manifest.setLastActiveAgent(selection.id);
-		await configRepo.save(config);
-		if (onAfterSave) {
-			await onAfterSave(selection.id, config);
-		}
+		await this.configRepo.save(config);
+		if (onAfterSave) await onAfterSave(selection.id, config);
 		vscode.window.showInformationMessage(`Active tool set to ${selection.label}.`);
 		return selection.id;
-	};
+	}
 
-	const selectActiveAgent = async (workspaceRoot: string) =>
-		selectActiveAgentBase(workspaceRoot, async (agentId, config) => {
-			ideWatcher.dispose();
-			ideWatcher.register(workspaceRoot, agentId, config);
-			await fetchAndInstallRules.execute(workspaceRoot, { agentIds: [agentId] });
-			const ruleExists = existsSync(join(workspaceRoot, '.agents', '.ai', 'rules', `${agentId}.yaml`));
+	/**
+	 * Handles the selection of an active agent for the workspace.
+	 * @param workspaceRoot - The root directory of the workspace
+	 */
+	private async selectActiveAgent(workspaceRoot: string) {
+		return this.selectActiveAgentBase(workspaceRoot, async (agentId, config) => {
+			this.ideWatcher.dispose();
+			this.ideWatcher.register(workspaceRoot, agentId, config);
+			await this.fetchAndInstallRules.execute(workspaceRoot, { agentIds: [agentId] });
+			const ruleExists = existsSync(
+				join(workspaceRoot, '.agents', '.ai', 'rules', `${agentId}.yaml`),
+			);
 			if (ruleExists) {
-				const { writtenPaths } = await syncEngine.syncNew(workspaceRoot, agentId);
-				ignoredPaths.add(writtenPaths);
-				inboundCooldownUntil = Date.now() + COOLDOWN_MS;
-				outboundCooldownUntil = Date.now() + COOLDOWN_MS;
-				statusBar.update(SyncStatus.SYNCED, `Tool ${agentId} synced.`);
+				const { writtenPaths } = await this.syncEngine.syncNew(workspaceRoot, agentId);
+				this.ignoredPaths.add(writtenPaths);
+				this.inboundCooldownUntil = Date.now() + COOLDOWN_MS;
+				this.outboundCooldownUntil = Date.now() + COOLDOWN_MS;
+				this.statusBar.update(SyncStatus.SYNCED, `Tool ${agentId} synced.`);
 			}
 		});
+	}
 
-	const selectAgentForNewProject = async (workspaceRoot: string): Promise<string | null> => {
-		const baseAgents = await agentScanner.detectAgents(workspaceRoot);
-		const agents = await getMergedAgentsForSelector(workspaceRoot, baseAgents);
+	/**
+	 * Shows a picker to select an agent when initializing a new project.
+	 * @param workspaceRoot - The root directory of the workspace
+	 * @returns The selected agent ID or null if cancelled
+	 */
+	private async selectAgentForNewProject(workspaceRoot: string): Promise<string | null> {
+		if (this.e2eAgentId) return this.e2eAgentId;
+		const baseAgents = await this.agentScanner.detectAgents(workspaceRoot);
+		const agents = await this.getMergedAgentsForSelector(workspaceRoot, baseAgents);
 		if (!agents.length) {
 			vscode.window.showInformationMessage('No tools detected. Add a tool manually.');
 			return null;
@@ -421,9 +714,7 @@ export function activate(context: vscode.ExtensionContext) {
 			quickPick.items = items;
 			quickPick.placeholder = unrecognizedPlaceholder;
 			quickPick.ignoreFocusOut = true;
-			if (defaultItem) {
-				quickPick.activeItems = [defaultItem];
-			}
+			if (defaultItem) quickPick.activeItems = [defaultItem];
 			quickPick.onDidAccept(() => {
 				const picked = quickPick.selectedItems[0] ?? quickPick.activeItems[0];
 				resolve(picked);
@@ -436,118 +727,119 @@ export function activate(context: vscode.ExtensionContext) {
 			quickPick.show();
 		});
 		return selection?.id ?? null;
-	};
+	}
 
-	const startSync = new StartSyncOrchestration({
-		statusBar,
-		syncEngine,
-		initializeProject,
-		migrateExistingAgentsToBridge,
-		configRepository: configRepo,
-		fetchAndInstallRules,
-		getMissingRulesAgentIds,
-		notifyMissingRules,
-		selectActiveAgent,
-		selectAgentForNewProject,
-		logger,
-	});
-
-	const setupWatchers = async (workspaceRoot: string): Promise<void> => {
-		await notifyUnrecognizedIde(workspaceRoot);
-		const exists = await configRepo.exists(workspaceRoot);
+	/**
+	 * Sets up file watchers for IDE changes in the workspace.
+	 * @param workspaceRoot - The root directory of the workspace
+	 */
+	private async setupWatchers(workspaceRoot: string): Promise<void> {
+		await this.notifyUnrecognizedIde(workspaceRoot);
+		const exists = await this.configRepo.exists(workspaceRoot);
 		if (!exists) return;
 
-		const config = await configRepo.load(workspaceRoot);
+		const config = await this.configRepo.load(workspaceRoot);
 		const activeAgentId = config.manifest.currentAgent ?? detectAgentFromHostApp();
 		if (!activeAgentId) return;
 
-		ideWatcher.register(workspaceRoot, activeAgentId, config);
-	};
+		this.ideWatcher.register(workspaceRoot, activeAgentId, config);
+	}
 
-	const setupAgentsWatcher = (workspaceRoot: string): void => {
-		agentsWatcher.dispose();
-		agentsWatcher.register(workspaceRoot);
-	};
-
-	// 3. Registrar Comandos
-	const syncCommand = vscode.commands.registerCommand('dotagents-vscode.sync', async () => {
-		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-		if (!workspaceRoot) {
-			vscode.window.showErrorMessage('No workspace folder open');
-			return;
-		}
-		const agentId = await selectActiveAgent(workspaceRoot);
-		if (!agentId) return;
-		const direction = await showSyncDirectionPicker();
-		if (!direction) return;
-		await startSync.execute({ direction, skipAgentSelection: true });
-	});
-
-	const addAgentCommand = vscode.commands.registerCommand('dotagents-vscode.addAgent', async () => {
-		await addAgent.execute();
-	});
-
-	const configureAgentCommand = vscode.commands.registerCommand('dotagents-vscode.configureAgent', async () => {
-		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-		if (!workspaceRoot) {
-			vscode.window.showErrorMessage('No workspace folder open');
-			return;
-		}
-		await selectActiveAgent(workspaceRoot);
-	});
-
-	const menuCommand = vscode.commands.registerCommand('dotagents-vscode.showMenu', () => {
-		vscode.window.showQuickPick([
-			{ label: '$(sync) Synchronize Now', id: 'sync' },
-			{ label: '$(plus) Add Agent/IDE Manually', id: 'add' },
-			{ label: '$(settings) Configure Active Agents', id: 'setup' },
-			{ label: '$(question) Generate Rules Prompt', id: 'prompt' }
-		]).then(async (selection) => {
-			if (selection?.id === 'sync') {
-				vscode.commands.executeCommand('dotagents-vscode.sync');
-			} else if (selection?.id === 'add') {
-				vscode.commands.executeCommand('dotagents-vscode.addAgent');
-			} else if (selection?.id === 'setup') {
-				vscode.commands.executeCommand('dotagents-vscode.configureAgent');
-			} else if (selection?.id === 'prompt') {
-				const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-				if (!workspaceRoot) {
-					vscode.window.showErrorMessage('No workspace folder open');
-					return;
-				}
-				await ensureMakeRulePrompt(workspaceRoot, context);
-				const promptPath = join(workspaceRoot, '.agents', '.ai', 'rules', 'make_rule_prompt.md');
-				await vscode.window.showTextDocument(vscode.Uri.file(promptPath), { preview: false });
-			}
-		});
-	});
-
-	context.subscriptions.push(syncCommand, addAgentCommand, configureAgentCommand, menuCommand, ideWatcher, agentsWatcher);
-
-	// 4. Ejecutar sincronización inicial y configurar watchers (cuando el workspace esté listo)
-	const runInitialSync = async () => {
-		ideWatcher.dispose();
-		agentsWatcher.dispose();
-		const result = await startSync.execute();
-		if (!result.completed) return; // User cancelled or error - do not create partial structure
-		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-		if (workspaceRoot) {
-			await ensureMakeRulePrompt(workspaceRoot, context);
-			await setupWatchers(workspaceRoot);
-			setupAgentsWatcher(workspaceRoot);
-		}
-	};
-	if (vscode.workspace.workspaceFolders?.length) {
-		runInitialSync();
-	} else {
-		const disposable = vscode.workspace.onDidChangeWorkspaceFolders(() => {
-			if (vscode.workspace.workspaceFolders?.length) {
-				disposable.dispose();
-				runInitialSync();
-			}
-		});
-		context.subscriptions.push(disposable);
+	/**
+	 * Sets up a watcher for changes in the .agents directory.
+	 * @param workspaceRoot - The root directory of the workspace
+	 */
+	private setupAgentsWatcher(workspaceRoot: string): void {
+		this.agentsWatcher.dispose();
+		this.agentsWatcher.register(workspaceRoot);
 	}
 }
 
-export function deactivate() { }
+interface ExtensionAppCommandHandlers {
+	executeSyncCommand: () => Promise<void>;
+	executeAddAgentCommand: () => Promise<void>;
+	executeConfigureAgentCommand: () => Promise<void>;
+	executeShowMenuCommand: () => Promise<void>;
+	getCoreDisposables: () => vscode.Disposable[];
+}
+
+/**
+ * Registers extension commands and returns the created subscriptions.
+ */
+function registerExtensionCommands(handlers: ExtensionAppCommandHandlers): vscode.Disposable[] {
+	const syncCommand = vscode.commands.registerCommand('dotagents-vscode.sync', async () => {
+		await handlers.executeSyncCommand();
+	});
+
+	const addAgentCommand = vscode.commands.registerCommand(
+		'dotagents-vscode.addAgent',
+		async () => {
+			await handlers.executeAddAgentCommand();
+		},
+	);
+
+	const configureAgentCommand = vscode.commands.registerCommand(
+		'dotagents-vscode.configureAgent',
+		async () => {
+			await handlers.executeConfigureAgentCommand();
+		},
+	);
+
+	const menuCommand = vscode.commands.registerCommand('dotagents-vscode.showMenu', async () => {
+		await handlers.executeShowMenuCommand();
+	});
+
+	return [
+		syncCommand,
+		addAgentCommand,
+		configureAgentCommand,
+		menuCommand,
+		...handlers.getCoreDisposables(),
+	];
+}
+
+/**
+ * Creates the infrastructure dependencies for the app.
+ */
+function createExtensionInfrastructure(
+	context: vscode.ExtensionContext,
+): ExtensionAppProps['infrastructure'] {
+	const logger = new ExtensionLogger({
+		getWorkspaceRoot: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+	});
+
+	const configRepo = new NodeConfigRepository();
+
+	return {
+		logger,
+		statusBar: new StatusBarManager({ context }),
+		configRepo,
+		syncEngine: new DiffSyncAdapter({
+			configRepository: configRepo,
+			logger,
+		}),
+		getMissingRulesAgentIds: new GetMissingRulesAgentIdsUseCase({
+			configRepository: configRepo,
+		}),
+		ignoredPaths: new IgnoredPathsRegistry(),
+		ruleProvider: new GitHubRuleProvider({ logger }),
+		agentScanner: new FsAgentScanner(),
+	};
+}
+
+/**
+ * Entry point para la extensión DotAgents VSCode.
+ * Orquestador principal de la sincronización entre el bridge universal .agents y el IDE local.
+ */
+export function activate(context: vscode.ExtensionContext) {
+	const app = new ExtensionApp({
+		context,
+		infrastructure: createExtensionInfrastructure(context),
+	});
+	app.activate();
+}
+
+/**
+ * Called when the extension is deactivated.
+ */
+export function deactivate() {}

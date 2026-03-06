@@ -1,0 +1,18 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Extension E2E Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"${workspaceFolder}/../supabase-kit",
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/e2e/suite/index"
+			],
+			"outFiles": ["${workspaceFolder}/dist/**/*.js", "${workspaceFolder}/e2e/suite/**/*.js"],
+			"preLaunchTask": null
+		}
+	]
+}

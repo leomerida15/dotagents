@@ -1,0 +1,51 @@
+{
+  "manifest": {
+    "lastProcessedAt": 1772734845506,
+    "lastActiveAgent": "cursor",
+    "currentAgent": "cursor",
+    "agents": {
+      "cursor": {
+        "lastProcessedAt": 1772734845506
+      },
+      "antigravity": {
+        "lastProcessedAt": 0
+      },
+      "opencode": {
+        "lastProcessedAt": 0
+      },
+      "e2e-agent": {
+        "lastProcessedAt": 1772734845211
+      }
+    }
+  },
+  "agents": [
+    {
+      "id": "cursor",
+      "name": "cursor",
+      "sourceRoot": ".cursor",
+      "inbound": [],
+      "outbound": []
+    },
+    {
+      "id": "antigravity",
+      "name": "antigravity",
+      "sourceRoot": "/home/snor/.gemini/antigravity",
+      "inbound": [],
+      "outbound": []
+    },
+    {
+      "id": "opencode",
+      "name": "opencode",
+      "sourceRoot": "/home/snor/.config/opencode",
+      "inbound": [],
+      "outbound": []
+    },
+    {
+      "id": "e2e-agent",
+      "name": "e2e-agent",
+      "sourceRoot": ".e2e-agent/",
+      "inbound": [],
+      "outbound": []
+    }
+  ]
+}

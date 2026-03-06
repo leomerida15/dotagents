@@ -4,6 +4,9 @@ import type { IRuleProvider } from '@dotagents/diff';
 import type { IConfigRepository } from '@dotagents/diff';
 import type { ILogger } from './ports/ILogger';
 
+/**
+ * Properties required to initialize the FetchAndInstallRulesUseCase.
+ */
 export interface FetchAndInstallRulesUseCaseProps {
 	ruleProvider: IRuleProvider;
 	configRepository: IConfigRepository;
@@ -20,6 +23,11 @@ export class FetchAndInstallRulesUseCase {
 	private readonly dotAgentsFolder: string;
 	private readonly logger: ILogger | undefined;
 
+	/**
+	 * Creates a use case that fetches remote rules and installs them in the workspace.
+	 *
+	 * @param props - Dependencies and optional configuration
+	 */
 	constructor({
 		ruleProvider,
 		configRepository,
@@ -32,6 +40,11 @@ export class FetchAndInstallRulesUseCase {
 		this.logger = logger;
 	}
 
+	/**
+	 * Fetches rules from GitHub for each detected agent and persists them to .agents/.ai/rules/.
+	 * @param workspaceRoot - The root directory of the workspace.
+	 * @param options - Optional parameters including specific agentIds to fetch.
+	 */
 	async execute(workspaceRoot: string, options?: { agentIds?: string[] }): Promise<void> {
 		const rulesDir = join(workspaceRoot, this.dotAgentsFolder, '.ai', 'rules');
 		await mkdir(rulesDir, { recursive: true });
@@ -53,7 +66,8 @@ export class FetchAndInstallRulesUseCase {
 					else console.log(`Installed rule for ${agentId}`);
 				}
 			} catch (error: any) {
-				if (this.logger) this.logger.warn(`Could not install rule for ${agentId}:`, error.message);
+				if (this.logger)
+					this.logger.warn(`Could not install rule for ${agentId}:`, error.message);
 				else console.warn(`Could not install rule for ${agentId}:`, error.message);
 			}
 		}

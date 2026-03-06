@@ -6,6 +6,10 @@ export interface MappingRuleProps {
 	sourceExt?: string;
 	/** Extension in target (e.g. .md). Must include leading dot. */
 	targetExt?: string;
+	/** JSONPath for data extraction (if format involves JSON transformation) */
+	extract?: string;
+	/** Transformation adapter name (e.g. mcp-cursor, agent-mdc) */
+	adapter?: string;
 }
 
 export class MappingRule {
@@ -14,6 +18,8 @@ export class MappingRule {
 	public readonly format?: string;
 	public readonly sourceExt?: string;
 	public readonly targetExt?: string;
+	public readonly extract?: string;
+	public readonly adapter?: string;
 
 	constructor(
 		fromOrProps: string | MappingRuleProps,
@@ -21,12 +27,16 @@ export class MappingRule {
 		formatArg?: string,
 		sourceExtArg?: string,
 		targetExtArg?: string,
+		extractArg?: string,
+		adapterArg?: string,
 	) {
 		let from: string;
 		let to: string;
 		let format: string | undefined;
 		let sourceExt: string | undefined;
 		let targetExt: string | undefined;
+		let extract: string | undefined;
+		let adapter: string | undefined;
 
 		if (typeof fromOrProps === 'object') {
 			const p = fromOrProps;
@@ -35,12 +45,16 @@ export class MappingRule {
 			format = p.format;
 			sourceExt = p.sourceExt;
 			targetExt = p.targetExt;
+			extract = p.extract;
+			adapter = p.adapter;
 		} else {
 			from = fromOrProps;
 			to = toArg ?? '';
 			format = formatArg;
 			sourceExt = sourceExtArg;
 			targetExt = targetExtArg;
+			extract = extractArg;
+			adapter = adapterArg;
 		}
 
 		if (!from) throw new Error("MappingRule 'from' cannot be empty");
@@ -73,6 +87,8 @@ export class MappingRule {
 		this.format = format;
 		this.sourceExt = sourceExt;
 		this.targetExt = targetExt;
+		this.extract = extract;
+		this.adapter = adapter;
 	}
 
 	private static isUnsafePath(path: string): boolean {

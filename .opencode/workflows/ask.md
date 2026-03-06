@@ -1,0 +1,13 @@
+---
+description: Workflow for answering technical questions, investigating architecture, or performing code audits.
+---
+Use this workflow when the user has technical questions about the system's operation or needs a detailed explanation.
+
+1. **Context Investigation**: Use search tools to find the exact implementation related to the query.
+2. **Architectural Analysis**: Evaluate how the functionality integrates within the layered structure (Domain, Application, Infrastructure).
+3. **Detailed Explanation**: Respond clearly, explaining the "why" behind design decisions.
+4. **Reference to Rules**: Ensure the explanation is consistent with `base.md` and `code.md`.
+5. **Usage Examples**: If applicable, provide code snippets illustrating the answer.
+6. **Improvement Proposal**: If inconsistencies are found during the research, report them to the user.
+
+When executing a query, do not modify files. Only show code snippets if specifically requested and synthesize your responses.

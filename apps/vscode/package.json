@@ -2,7 +2,7 @@
 	"name": "@dotagents/vscode",
 	"displayName": "dotAgents",
 	"description": "dotAgents is a IA settings synchronization extension for IDEs fork from vscode.",
-	"version": "0.0.4",
+	"version": "0.2.0",
 	"icon": "access/logo.png",
 	"publisher": "GobernAI",
 	"repository": {
@@ -42,7 +42,7 @@
 			}
 		],
 		"configuration": {
-			"title": "DotAgents",
+			"title": "dotAgents",
 			"properties": {
 				"dotagents.debug.logToFile": {
 					"type": "boolean",
@@ -58,17 +58,20 @@
 		}
 	},
 	"scripts": {
-		"prepublish": "bun run -b bunstart.publich.ts",
+		"prepublish": "bun run -b bunstart.publish.ts",
 		"build": "bun run -b bunstart.build.ts",
 		"watch": "bun build ./src/extension.ts --outdir ./dist --target node --external vscode --watch",
 		"lint": "eslint src --ext ts",
-		"test": "node ./out/test/runTest.js"
+		"test": "node ./out/test/runTest.js",
+		"test:e2e": "bun run -b build && bun run -b e2e/runTest.ts"
 	},
 	"devDependencies": {
 		"@types/js-yaml": "^4.0.9",
-		"@types/vscode": "^1.85.0",
 		"@types/node": "20.x",
+		"@types/vscode": "^1.85.0",
+		"@vscode/test-electron": "^2.3.9",
 		"js-yaml": "^4.1.1",
+		"ts-node": "^10.9.2",
 		"typescript": "^5.3.3"
 	},
 	"dependencies": {
