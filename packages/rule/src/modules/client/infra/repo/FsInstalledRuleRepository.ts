@@ -26,14 +26,9 @@ export class FsInstalledRuleRepository implements IInstalledRuleRepository {
 	 * @param props - Optional base path where rule files are stored
 	 */
 	constructor({ basePath }: FsInstalledRuleRepositoryProps = {}) {
-		this.basePath = basePath ?? join(process.cwd(), '.agents', 'rules');
+		this.basePath = basePath ?? join(process.cwd(), '.agents', '.ai', 'rules');
 	}
 
-	/**
-	 * Checks if a rule file exists for the given agent ID.
-	 * @param agentId - The ID of the agent.
-	 * @returns True if the rule exists, false otherwise.
-	 */
 	/**
 	 * Checks if a rule file exists for the given agent ID.
 	 * @param agentId - The ID of the agent.
@@ -49,11 +44,6 @@ export class FsInstalledRuleRepository implements IInstalledRuleRepository {
 		}
 	}
 
-	/**
-	 * Gets the rule for a specific agent ID.
-	 * @param agentId - The ID of the agent.
-	 * @returns The installed rule or null if not found.
-	 */
 	/**
 	 * Gets the rule for a specific agent ID.
 	 * @param agentId - The ID of the agent.
@@ -85,10 +75,6 @@ export class FsInstalledRuleRepository implements IInstalledRuleRepository {
 		}
 	}
 
-	/**
-	 * Gets all installed rules from the filesystem.
-	 * @returns Array of installed rules.
-	 */
 	/**
 	 * Gets all installed rules from the filesystem.
 	 * @returns Array of installed rules.

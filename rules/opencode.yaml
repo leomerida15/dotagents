@@ -1,34 +1,70 @@
 version: "1.0"
 agent:
   id: "opencode"
-  name: "Opencode"
+  name: "OpenCode"
+  ui:
+    icon: "terminal"           # VSCode Codicon ID
+    color: "#00d4aa"           # OpenCode brand color
+    description: "AI-powered terminal coding agent with integrated SDD workflows"
 
+# ─── Paths ────────────────────────────────────────────────────────────────────
+# All locations where OpenCode stores configuration.
+# Used for agent detection and as sync root for directory mappings.
 paths:
-  - path: ".opencode"
+  # Primary workspace config directory — OpenCode detection marker
+  - path: ".opencode/"
     scope: "workspace"
-    type: "file"
+    type: "directory"
     purpose: "marker"
+  # Global config directory in $HOME
   - path: ".config/opencode"
     scope: "home"
     type: "directory"
     purpose: "config"
 
+# ─── Capability Matrix ────────────────────────────────────────────────────────
+#  rules       ✅  .opencode/rules/ (.md)              → persistent instructions
+#  skills      ✅  .opencode/skills/ (folders+SKILL.md) → on-demand capabilities
+#  workflows   ✅  .opencode/commands/ (slash commands) → user-invocable actions
+#              ✅  .opencode/workflows/ (task prompts)  → user-invocable actions
+#  agents      ✅  .opencode/opencode.json ($.agent)    → custom agent modes (❌ not a rule)
+#  mcp         ✅  .opencode/opencode.json ($.mcp) ↔ listado único .agents/mcp/mcp.json
+#  agent-file  ❌  OpenCode does not use a single root instruction file
+#  docs        ❌  No native docs folder
+
 mapping:
+  # ── INBOUND: .opencode/ → .agents/ ──────────────────────────────────────────
+
   inbound:
+    # [rules] ✅ Persistent behavior instructions (always-on, auto-applied)
     - from: "rules/"
       to: "rules/"
       format: "directory"
+
+    # [skills] Specialized on-demand capabilities (folders with SKILL.md)
     - from: "skills/"
       to: "skills/"
       format: "directory"
+
+    # [workflows] Slash commands → bridge workflows (primary: /cmd syntax)
+    - from: "commands/"
+      to: "workflows/"
+      format: "directory"
+
+    # [workflows] Extended task prompts → bridge workflows (secondary merge)
+    # Files are merged into workflows/; no name conflicts with commands/
     - from: "workflows/"
       to: "workflows/"
       format: "directory"
+
+    # [mcp] Listado único en el puente (todas las herramientas sincronizan con mcp/mcp.json)
     - from: "opencode.json"
-      to: "mcp.json"
+      to: "mcp/mcp.json"
       format: "json-transform"
       extract: "$.mcp"
       adapter: "mcp-standard"
+
+    # [agents] Custom agent/mode definitions — split into individual .json files
     - from: "opencode.json"
       to: "agents/"
       format: "json-split"
@@ -36,17 +72,35 @@ mapping:
       adapter: "agent-json"
       target_ext: ".json"
 
+  # ── OUTBOUND: .agents/ → .opencode/ ─────────────────────────────────────────
+
   outbound:
+    # [rules] ✅
     - from: "rules/"
       to: "rules/"
+      format: "directory"
+
+    # [skills]
     - from: "skills/"
       to: "skills/"
+      format: "directory"
+
+    # [workflows] Bridge workflows → OpenCode slash commands (canonical slash dir)
+    # Note: .opencode/workflows/ is an OpenCode-native dir; not reconstructed from bridge
     - from: "workflows/"
-      to: "workflows/"
-    # Reconstructs opencode.json from .agents/agents/*.json, merging back under "agent" key
+      to: "commands/"
+      format: "directory"
+
+    # [agents] Merge agent definitions from bridge back into opencode.json under "agent" key
     - from: "agents/"
       to: "opencode.json"
       format: "json-merge"
       adapter: "opencode-config"
+
+    # [mcp] Listado único del puente → opencode.json $.mcp
+    - from: "mcp/mcp.json"
+      to: "opencode.json"
+      format: "json-transform"
+      adapter: "mcp-standard"
 
 target_standard: ".agents/"

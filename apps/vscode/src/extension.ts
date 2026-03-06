@@ -59,6 +59,17 @@ async function ensureMakeRulePrompt(
 interface ExtensionAppProps {
 	/** The VSCode extension context */
 	context: vscode.ExtensionContext;
+	/** The set of infrastructure dependencies injected into the app */
+	infrastructure: {
+		logger: ExtensionLogger;
+		statusBar: StatusBarManager;
+		configRepo: NodeConfigRepository;
+		syncEngine: DiffSyncAdapter;
+		getMissingRulesAgentIds: GetMissingRulesAgentIdsUseCase;
+		ignoredPaths: IgnoredPathsRegistry;
+		ruleProvider: GitHubRuleProvider;
+		agentScanner: FsAgentScanner;
+	};
 }
 
 /**
@@ -66,6 +77,7 @@ interface ExtensionAppProps {
  * Separates concerns into distinct methods for clean initialization.
  */
 class ExtensionApp {
+	private readonly context: vscode.ExtensionContext;
 	private logger: ExtensionLogger;
 	private e2eAgentId: string | null;
 	private e2eSyncDirection: 'inbound' | 'outbound' | null;
@@ -96,11 +108,29 @@ class ExtensionApp {
 
 	/**
 	 * Creates an instance of ExtensionApp with the provided properties.
-	 * @param props - The properties containing the extension context
+	 * @param props - The properties containing the extension context and infrastructure
 	 */
-	constructor(private readonly context: vscode.ExtensionContext) {
-		this.logger = new ExtensionLogger({
-			getWorkspaceRoot: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+	constructor({ context, infrastructure }: ExtensionAppProps) {
+		this.context = context;
+		this.logger = infrastructure.logger;
+		this.statusBar = infrastructure.statusBar;
+		this.configRepo = infrastructure.configRepo;
+		this.syncEngine = infrastructure.syncEngine;
+		this.getMissingRulesAgentIds = infrastructure.getMissingRulesAgentIds;
+		this.ignoredPaths = infrastructure.ignoredPaths;
+		this.ruleProvider = infrastructure.ruleProvider;
+		this.agentScanner = infrastructure.agentScanner;
+
+		this.ideWatcher = new IdeWatcherService({
+			onChange: (uri: vscode.Uri) => this.scheduleInboundSync(uri),
+			onCreate: (uri: vscode.Uri) => this.scheduleInboundSync(uri),
+			onDelete: (uri: vscode.Uri) => this.scheduleInboundSync(uri),
+		});
+
+		this.agentsWatcher = new AgentsWatcherService({
+			onChange: (uri: vscode.Uri) => this.scheduleOutboundSync(uri),
+			onCreate: (uri: vscode.Uri) => this.scheduleOutboundSync(uri),
+			onDelete: (uri: vscode.Uri) => this.scheduleOutboundSync(uri),
 		});
 		this.e2eAgentId = process.env.DOTAGENTS_E2E_AGENT?.trim() || null;
 		const direction = process.env.DOTAGENTS_E2E_SYNC_DIRECTION;
@@ -114,40 +144,9 @@ class ExtensionApp {
 	 */
 	public activate() {
 		this.logger.info('DotAgents VSCode is now active');
-		this.initializeInfrastructure();
 		this.initializeUseCases();
-		this.registerCommands();
+		this.context.subscriptions.push(...registerExtensionCommands(this));
 		this.runInitialSyncAndSetupWatchers();
-	}
-
-	/**
-	 * Initializes the infrastructure dependencies (status bar, config repository, sync engine, etc.).
-	 */
-	private initializeInfrastructure() {
-		this.statusBar = new StatusBarManager({ context: this.context });
-		this.configRepo = new NodeConfigRepository();
-		this.syncEngine = new DiffSyncAdapter({
-			configRepository: this.configRepo,
-			logger: this.logger,
-		});
-		this.getMissingRulesAgentIds = new GetMissingRulesAgentIdsUseCase({
-			configRepository: this.configRepo,
-		});
-		this.ignoredPaths = new IgnoredPathsRegistry();
-		this.ruleProvider = new GitHubRuleProvider({ logger: this.logger });
-		this.agentScanner = new FsAgentScanner();
-
-		this.ideWatcher = new IdeWatcherService({
-			onChange: (uri) => this.scheduleInboundSync(uri),
-			onCreate: (uri) => this.scheduleInboundSync(uri),
-			onDelete: (uri) => this.scheduleInboundSync(uri),
-		});
-
-		this.agentsWatcher = new AgentsWatcherService({
-			onChange: (uri) => this.scheduleOutboundSync(uri),
-			onCreate: (uri) => this.scheduleOutboundSync(uri),
-			onDelete: (uri) => this.scheduleOutboundSync(uri),
-		});
 	}
 
 	/**
@@ -215,84 +214,75 @@ class ExtensionApp {
 		});
 	}
 
-	/**
-	 * Registers the VSCode commands (sync, addAgent, configureAgent, showMenu).
-	 */
-	private registerCommands() {
-		const syncCommand = vscode.commands.registerCommand('dotagents-vscode.sync', async () => {
+	/** Executes the Sync command. */
+	public async executeSyncCommand(): Promise<void> {
+		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+		if (!workspaceRoot) {
+			vscode.window.showErrorMessage('No workspace folder open');
+			return;
+		}
+
+		const direction = await this.showSyncDirectionPicker();
+		if (!direction) return;
+
+		await this.startSync.execute({ direction });
+	}
+
+	/** Executes the Add Agent command. */
+	public async executeAddAgentCommand(): Promise<void> {
+		await this.addAgent.execute();
+	}
+
+	/** Executes the Configure Agent command. */
+	public async executeConfigureAgentCommand(): Promise<void> {
+		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+		if (!workspaceRoot) {
+			vscode.window.showErrorMessage('No workspace folder open');
+			return;
+		}
+
+		await this.selectActiveAgent(workspaceRoot);
+	}
+
+	/** Executes the contextual menu command. */
+	public async executeShowMenuCommand(): Promise<void> {
+		const selection = await vscode.window.showQuickPick([
+			{ label: '$(sync) Synchronize Now', id: 'sync' },
+			{ label: '$(plus) Add Agent/IDE Manually', id: 'add' },
+			{ label: '$(settings) Configure Active Agents', id: 'setup' },
+			{ label: '$(question) Generate Rules Prompt', id: 'prompt' },
+		]);
+
+		if (!selection) return;
+		if (selection.id === 'sync') {
+			await this.executeSyncCommand();
+		} else if (selection.id === 'add') {
+			await this.executeAddAgentCommand();
+		} else if (selection.id === 'setup') {
+			await this.executeConfigureAgentCommand();
+		} else if (selection.id === 'prompt') {
 			const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 			if (!workspaceRoot) {
 				vscode.window.showErrorMessage('No workspace folder open');
 				return;
 			}
-			const direction = await this.showSyncDirectionPicker();
-			if (!direction) return;
-			await this.startSync.execute({ direction });
-		});
+			await ensureMakeRulePrompt(workspaceRoot, this.context);
+			const promptPath = join(
+				workspaceRoot,
+				'.agents',
+				'.ai',
+				'rules',
+				'make_rule_prompt.md',
+			);
+			await vscode.window.showTextDocument(vscode.Uri.file(promptPath), {
+				preview: false,
+			});
+		}
+	}
 
-		const addAgentCommand = vscode.commands.registerCommand(
-			'dotagents-vscode.addAgent',
-			async () => {
-				await this.addAgent.execute();
-			},
-		);
-
-		const configureAgentCommand = vscode.commands.registerCommand(
-			'dotagents-vscode.configureAgent',
-			async () => {
-				const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-				if (!workspaceRoot) {
-					vscode.window.showErrorMessage('No workspace folder open');
-					return;
-				}
-				await this.selectActiveAgent(workspaceRoot);
-			},
-		);
-
-		const menuCommand = vscode.commands.registerCommand('dotagents-vscode.showMenu', () => {
-			vscode.window
-				.showQuickPick([
-					{ label: '$(sync) Synchronize Now', id: 'sync' },
-					{ label: '$(plus) Add Agent/IDE Manually', id: 'add' },
-					{ label: '$(settings) Configure Active Agents', id: 'setup' },
-					{ label: '$(question) Generate Rules Prompt', id: 'prompt' },
-				])
-				.then(async (selection) => {
-					if (selection?.id === 'sync') {
-						vscode.commands.executeCommand('dotagents-vscode.sync');
-					} else if (selection?.id === 'add') {
-						vscode.commands.executeCommand('dotagents-vscode.addAgent');
-					} else if (selection?.id === 'setup') {
-						vscode.commands.executeCommand('dotagents-vscode.configureAgent');
-					} else if (selection?.id === 'prompt') {
-						const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-						if (!workspaceRoot) {
-							vscode.window.showErrorMessage('No workspace folder open');
-							return;
-						}
-						await ensureMakeRulePrompt(workspaceRoot, this.context);
-						const promptPath = join(
-							workspaceRoot,
-							'.agents',
-							'.ai',
-							'rules',
-							'make_rule_prompt.md',
-						);
-						await vscode.window.showTextDocument(vscode.Uri.file(promptPath), {
-							preview: false,
-						});
-					}
-				});
-		});
-
-		this.context.subscriptions.push(
-			syncCommand,
-			addAgentCommand,
-			configureAgentCommand,
-			menuCommand,
-			this.ideWatcher,
-			this.agentsWatcher,
-		);
+	/** Returns disposables managed by the core app. */
+	public getCoreDisposables(): vscode.Disposable[] {
+		return [this.ideWatcher, this.agentsWatcher];
 	}
 
 	/**
@@ -443,7 +433,7 @@ class ExtensionApp {
 			return;
 		}
 		const config = await this.configRepo.load(workspaceRoot);
-		const rulesDir = join(workspaceRoot, '.agents', 'rules');
+		const rulesDir = join(workspaceRoot, '.agents', '.ai', 'rules');
 
 		let ruleExists = existsSync(join(rulesDir, `${agentId}.yaml`));
 		if (!ruleExists) {
@@ -559,7 +549,7 @@ class ExtensionApp {
 	 * @returns Array of custom agents
 	 */
 	private async getAgentsFromCustomRules(workspaceRoot: string): Promise<Agent[]> {
-		const rulesDir = join(workspaceRoot, '.agents', 'rules');
+		const rulesDir = join(workspaceRoot, '.agents', '.ai', 'rules');
 		try {
 			const listRules = ClientModule.createListInstalledRulesUseCase(rulesDir);
 			const dtos = await listRules.execute();
@@ -681,7 +671,7 @@ class ExtensionApp {
 			this.ideWatcher.register(workspaceRoot, agentId, config);
 			await this.fetchAndInstallRules.execute(workspaceRoot, { agentIds: [agentId] });
 			const ruleExists = existsSync(
-				join(workspaceRoot, '.agents', 'rules', `${agentId}.yaml`),
+				join(workspaceRoot, '.agents', '.ai', 'rules', `${agentId}.yaml`),
 			);
 			if (ruleExists) {
 				const { writtenPaths } = await this.syncEngine.syncNew(workspaceRoot, agentId);
@@ -765,12 +755,87 @@ class ExtensionApp {
 	}
 }
 
+interface ExtensionAppCommandHandlers {
+	executeSyncCommand: () => Promise<void>;
+	executeAddAgentCommand: () => Promise<void>;
+	executeConfigureAgentCommand: () => Promise<void>;
+	executeShowMenuCommand: () => Promise<void>;
+	getCoreDisposables: () => vscode.Disposable[];
+}
+
+/**
+ * Registers extension commands and returns the created subscriptions.
+ */
+function registerExtensionCommands(handlers: ExtensionAppCommandHandlers): vscode.Disposable[] {
+	const syncCommand = vscode.commands.registerCommand('dotagents-vscode.sync', async () => {
+		await handlers.executeSyncCommand();
+	});
+
+	const addAgentCommand = vscode.commands.registerCommand(
+		'dotagents-vscode.addAgent',
+		async () => {
+			await handlers.executeAddAgentCommand();
+		},
+	);
+
+	const configureAgentCommand = vscode.commands.registerCommand(
+		'dotagents-vscode.configureAgent',
+		async () => {
+			await handlers.executeConfigureAgentCommand();
+		},
+	);
+
+	const menuCommand = vscode.commands.registerCommand('dotagents-vscode.showMenu', async () => {
+		await handlers.executeShowMenuCommand();
+	});
+
+	return [
+		syncCommand,
+		addAgentCommand,
+		configureAgentCommand,
+		menuCommand,
+		...handlers.getCoreDisposables(),
+	];
+}
+
+/**
+ * Creates the infrastructure dependencies for the app.
+ */
+function createExtensionInfrastructure(
+	context: vscode.ExtensionContext,
+): ExtensionAppProps['infrastructure'] {
+	const logger = new ExtensionLogger({
+		getWorkspaceRoot: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+	});
+
+	const configRepo = new NodeConfigRepository();
+
+	return {
+		logger,
+		statusBar: new StatusBarManager({ context }),
+		configRepo,
+		syncEngine: new DiffSyncAdapter({
+			configRepository: configRepo,
+			logger,
+		}),
+		getMissingRulesAgentIds: new GetMissingRulesAgentIdsUseCase({
+			configRepository: configRepo,
+		}),
+		ignoredPaths: new IgnoredPathsRegistry(),
+		ruleProvider: new GitHubRuleProvider({ logger }),
+		agentScanner: new FsAgentScanner(),
+	};
+}
+
 /**
  * Entry point para la extensión DotAgents VSCode.
  * Orquestador principal de la sincronización entre el bridge universal .agents y el IDE local.
  */
 export function activate(context: vscode.ExtensionContext) {
-	const app = new ExtensionApp(context);
+	const app = new ExtensionApp({
+		context,
+		infrastructure: createExtensionInfrastructure(context),
+	});
 	app.activate();
 }
 

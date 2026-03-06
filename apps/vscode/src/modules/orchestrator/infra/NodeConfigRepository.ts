@@ -22,7 +22,9 @@ interface NodeConfigRepositoryProps {
  * Data structure for the persisted configuration state.
  */
 interface PersistedConfigData {
+	/** Serialized sync manifest state. */
 	manifest: any;
+	/** Serialized agents configuration with inbound/outbound mappings. */
 	agents: any[];
 }
 
@@ -121,6 +123,7 @@ export class NodeConfigRepository implements IConfigRepository {
 		await writeFile(syncPath, JSON.stringify(data, null, 2));
 		await unlink(legacyPath).catch(() => undefined);
 
+		await mkdir(join(agentsPath, '.ai', 'rules'), { recursive: true });
 		await mkdir(join(agentsPath, 'rules'), { recursive: true });
 		await mkdir(join(agentsPath, 'skills'), { recursive: true });
 		await mkdir(join(agentsPath, 'mcp'), { recursive: true });
@@ -200,6 +203,7 @@ export class NodeConfigRepository implements IConfigRepository {
 	public async ensureAIStructure(workspaceRoot: string): Promise<void> {
 		const agentsPath = join(workspaceRoot, this.DOT_AGENTS_FOLDER);
 		await mkdir(join(agentsPath, '.ai'), { recursive: true });
+		await mkdir(join(agentsPath, '.ai', 'rules'), { recursive: true });
 		await mkdir(join(agentsPath, 'rules'), { recursive: true });
 		await mkdir(join(agentsPath, 'skills'), { recursive: true });
 		await mkdir(join(agentsPath, 'mcp'), { recursive: true });

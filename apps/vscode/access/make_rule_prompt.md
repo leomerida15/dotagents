@@ -1,151 +1,158 @@
 # DotAgents Rule Creation Prompt
 
-Eres un Agente de IA de desarrollo. Estamos configurando un sistema de sincronización universal llamado **DotAgents**.
+You are an AI development agent. We are setting up a universal sync system called **DotAgents**.
 
-Necesito que generes un archivo de configuración YAML para ti mismo que defina cómo sincronizar tus reglas, habilidades, comandos y flujos de trabajo con el puente universal `.agents/`.
+**Language:** This prompt and your response (including the capability table and any text) must be in **English**. All comments inside the generated YAML file must also be in **English** (e.g. `# [rules] Persistent instructions`, not in another language).
 
-## Paso 1 — Declara qué funciones soporta tu herramienta
+**Goal:** Produce a **YAML configuration file** (agent rule) that defines how to sync your tool’s rules, skills, commands, MCP config, and workflows with the universal bridge `.agents/`. The file is saved at `.agents/rules/<id>.yaml` (e.g. `cursor.yaml`, `opencode.yaml`).
 
-Antes de generar el YAML, identifica cuáles de las siguientes **categorías de configuración** soporta tu herramienta. Solo incluirás mapeos para las que realmente existan en tu agente.
+## Step 1 — Declare which capabilities your tool supports
 
-| Categoría | Descripción | Ruta canónica en `.agents/` | ¿Crea reglas? |
+Before generating the YAML, identify which of the following **configuration categories** your tool supports. Only include mappings for categories that actually exist in your agent.
+
+| Category | Description | Canonical path in `.agents/` | Creates rules? |
 |---|---|---|---|
-| **rules** | Instrucciones persistentes que guían el comportamiento del agente (system prompts, project rules, coding standards). Se aplican siempre o por trigger/glob. | `.agents/rules/` | ✅ Sí — es la unidad principal de sincronización |
-| **skills** | Capacidades especializadas activables bajo demanda. Cada skill es una carpeta con un `SKILL.md` que define un workflow completo que el agente ejecuta cuando el usuario lo solicita. | `.agents/skills/` | ❌ No — son capacidades, no restricciones de comportamiento |
-| **workflows** | Comandos o acciones reutilizables que el usuario invoca explícitamente (slash commands, task runners, prompts parametrizados). | `.agents/workflows/` | ❌ No — son disparadores de acción, no reglas |
-| **agents** | Definición de agentes subordinados con personalidad, permisos y alcance propios (sub-agents, custom agent modes). | `.agents/agents/` | ❌ No — son orquestación, no reglas |
-| **agent-file** | Archivo único de instrucciones en la raíz del proyecto (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.clinerules`, etc.). | `.agents/rules/<id>-agent.md` | ✅ Sí — equivale a una regla global del proyecto |
-| **mcp** | Configuración de servidores MCP (Model Context Protocol): `mcp.json`, `.mcp.json`, sección en settings. | `.agents/mcp/` | ❌ No (es config de herramientas externas) |
-| **docs** | Documentación de contexto que el agente usa como referencia (no son instrucciones de comportamiento). | `.agents/docs/` | ❌ No (es contexto, no comportamiento) |
-| **custom** | Cualquier otra forma de configuración propia de la herramienta que deba ser portada al puente (ej. snippets, templates, personas). | `.agents/<categoria>/` | Depende del contenido |
+| **rules** | Persistent instructions that guide the agent (system prompts, project rules, coding standards). Applied always or by trigger/glob. | `.agents/rules/` | ✅ Yes — main sync unit |
+| **skills** | Specialized capabilities activated on demand. Each skill is a folder with a `SKILL.md` defining a full workflow the agent runs when the user requests it. | `.agents/skills/` | ❌ No — capabilities, not behavior constraints |
+| **workflows** | Reusable commands or actions the user invokes explicitly (slash commands, task runners, parameterized prompts). | `.agents/workflows/` | ❌ No — action triggers, not rules |
+| **agents** | Subordinate agent definitions with their own personality, permissions, and scope (sub-agents, custom agent modes). | `.agents/agents/` | ❌ No — orchestration, not rules |
+| **agent-file** | Single instruction file at project root (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.clinerules`, etc.). | `.agents/rules/<id>-agent.md` | ✅ Yes — equivalent to a global project rule |
+| **mcp** | MCP server config (Model Context Protocol): `mcp.json`, `.mcp.json`, or a settings section. The bridge has **one canonical list** (e.g. `mcp/mcp.json`); all tools sync with that list, not one file per agent. | `.agents/mcp/` (single file, e.g. `mcp.json`) | ❌ No (external tool config) |
+| **docs** | Reference documentation the agent uses (not behavior instructions). | `.agents/docs/` | ❌ No (context, not behavior) |
+| **custom** | Any other tool-specific config to be carried into the bridge (e.g. snippets, templates, personas). | `.agents/<category>/` | Depends on content |
 
 ---
 
-### Cómo distinguir rules, skills y workflows
+### How to tell rules, skills, and workflows apart
 
-Estas tres categorías son las que más se prestan a confusión. Usa esta guía para clasificar correctamente:
+These three categories are the most easily confused. Use this guide to classify correctly:
 
 | | **Rules** | **Skills** | **Workflows** |
 |---|---|---|---|
-| **Propósito** | Guiar/restringir el comportamiento general del agente | Dar una competencia especializada activable bajo demanda | Definir una acción invocable que el usuario dispara |
-| **Activación** | Siempre activa, o por trigger/glob automático | Cuando el usuario pide algo que encaja con la `description` del skill | Cuando el usuario invoca un comando explícito (ej. `/planning`) |
-| **Persistencia** | Permanente durante la sesión | Solo mientras se ejecuta el skill | Solo durante la ejecución del comando |
-| **Contiene** | Restricciones, estándares, convenciones | Workflow completo: cuándo usar, reglas internas, pasos, formato de salida | Prompt parametrizado o secuencia de pasos |
-| **Formato típico** | `.mdc`, `.md` con frontmatter (`alwaysApply`, `globs`) | Carpeta con `SKILL.md` (frontmatter `name`, `description`) | `.md` con frontmatter (`description`, opcionalmente `trigger`) |
-| **Ejemplo** | "Usa Bun en vez de Node" | "Escribe tests TDD antes de implementar" | `/planning` — genera un plan basado en un sprint |
-| **Ruta en `.agents/`** | `rules/` | `skills/<nombre>/SKILL.md` | `workflows/` |
+| **Purpose** | Guide or constrain the agent’s general behavior | Provide a specialized, on-demand capability | Define an invocable action the user triggers |
+| **Activation** | Always on, or by automatic trigger/glob | When the user asks for something that matches the skill’s `description` | When the user invokes an explicit command (e.g. `/planning`) |
+| **Persistence** | For the whole session | Only while the skill runs | Only for the duration of the command |
+| **Contains** | Constraints, standards, conventions | Full workflow: when to use, internal rules, steps, output format | Parameterized prompt or sequence of steps |
+| **Typical format** | `.mdc`, `.md` with frontmatter (`alwaysApply`, `globs`) | Folder with `SKILL.md` (frontmatter `name`, `description`) | `.md` with frontmatter (`description`, optionally `trigger`) |
+| **Example** | “Use Bun instead of Node” | “Write TDD tests before implementing” | `/planning` — generate a plan from a sprint |
+| **Path in `.agents/`** | `rules/` | `skills/<name>/SKILL.md` | `workflows/` |
 
-> **Regla de oro:** Se sincronizan como **reglas** aquellos archivos cuyo propósito es instruir/restringir/guiar el comportamiento del agente de IA en todo momento o bajo un patrón automático. Si el archivo define una **capacidad invocable** con su propio workflow, es un **skill**. Si define un **comando o acción** que el usuario dispara explícitamente, es un **workflow**.
+> **Golden rule:** Treat as **rules** those files whose purpose is to instruct/constrain/guide the AI agent’s behavior at all times or by an automatic pattern. If the file defines an **invocable capability** with its own workflow, it’s a **skill**. If it defines a **command or action** the user triggers explicitly, it’s a **workflow**.
 
-**Tests rápidos para clasificar:**
+**Quick classification tests:**
 
-1. ¿Se aplica automáticamente sin que el usuario lo pida? → **Rule**
-2. ¿El agente lo activa cuando detecta que la tarea encaja? → **Skill**
-3. ¿El usuario lo invoca con un comando explícito (ej. `/comando`)? → **Workflow**
-4. ¿Configura una herramienta externa (MCP, linter, etc.)? → **Ni rule ni skill ni workflow** (es `mcp` o `config`)
+1. Does it apply automatically without the user asking? → **Rule**
+2. Does the agent activate it when the task matches? → **Skill**
+3. Does the user invoke it with an explicit command (e.g. `/command`)? → **Workflow**
+4. Does it configure an external tool (MCP, linter, etc.)? → **Neither rule nor skill nor workflow** (it’s `mcp` or `config`)
 
 ---
 
-## Paso 2 — Instrucciones para generar el YAML
+## Step 2 — Instructions for generating the YAML
 
-1. Identifica tu ID de agente (ej: `cursor`, `claude-code`, `antigravity`, `cline`, etc.) y tu nombre.
-2. Define datos de interfaz gráfica bajo `ui` (icon, color, description).
-3. Identifica tus rutas de configuración: en el workspace (carpeta o archivos del proyecto) y, si aplica, en home (config global, relativa a `$HOME`).
-4. Genera un archivo YAML usando el esquema con `paths` (ver abajo). Cada entrada en `paths` tiene:
-   - **path**: ruta relativa (al workspace o a `$HOME` según `scope`).
-   - **scope**: `"workspace"` (raíz del proyecto) o `"home"` (relativo a `$HOME`, sin `~`).
-   - **type**: `"file"` o `"directory"`.
-   - **purpose**: `"marker"` (detección de agente), `"sync_source"` (origen/destino de sync), `"config"` (configuración global).
-5. Define los mapeos `inbound` (de ti hacia `.agents/`) y `outbound` (de `.agents/` hacia ti). **Incluye únicamente las categorías que tu herramienta soporta** según el Paso 1.
-6. Si utilizas extensiones de archivo distintas al estándar Markdown `.md` (ej. `.mdc`), utiliza `source_ext` y `target_ext` en el mapeo `directory` para hacer la conversión automática.
-7. Si necesitas extraer datos específicos de un JSON (ej. claves de configuración), usa `extract` (JSONPath) y `format: json-transform` o `json-split`.
-8. Si tu agente guarda reglas en `.md` pero el estándar o otra herramienta espera JSON, usa conversión de contenido: `format: md-json` (inbound) y `format: json-md` (outbound), con el esquema estándar `{ "content": "<markdown>", "description": "opcional" }` (ver documentación en `context/pkg/rule/doc/rule.md`).
-9. Si tu herramienta usa un **archivo único de instrucciones** en la raíz (`AGENTS.md`, `CLAUDE.md`, etc.), mapearlo como un `file` con `format: "file"` hacia `.agents/rules/<id>-agent.md`.
-10. Mapea los **commands/slash commands** de tu herramienta hacia `workflows/` en el puente. El nombre del comando nativo puede diferir (ej. Cursor usa `commands/`, Claude Code podría usar `tasks/`).
-11. Si tu herramienta soporta **sub-agents** o **custom agent modes**, mapéalos hacia `agents/` en el puente.
+If the repo already has rules in `.agents/rules/` or `rules/` (e.g. `cursor.yaml`, `opencode.yaml`), use them as a reference for format and mappings.
 
-## Esquema base con paths, extensiones y transformaciones
+1. Identify your agent ID (e.g. `cursor`, `claude-code`, `antigravity`, `cline`) and name.
+2. Define UI fields under `ui` (icon, color, description).
+3. Identify your config paths: in the workspace (project folder or files) and, if any, in home (global config, relative to `$HOME`).
+4. Generate a YAML file using the schema with `paths` (see below). Each `paths` entry has:
+   - **path**: relative path (to workspace or to `$HOME` depending on `scope`).
+   - **scope**: `"workspace"` (project root) or `"home"` (relative to `$HOME`, no `~`).
+   - **type**: `"file"` or `"directory"`.
+   - **purpose**: `"marker"` (agent detection), `"sync_source"` (sync source/target), `"config"` (global config).
+5. Define `inbound` (from your tool to `.agents/`) and `outbound` (from `.agents/` to your tool). **Include only the categories your tool supports** from Step 1.
+6. If you use file extensions other than `.md` (e.g. `.mdc`), use `source_ext` and `target_ext` in the `directory` mapping for automatic conversion.
+7. If you need to extract specific data from JSON (e.g. config keys), use `extract` (JSONPath) and `format: json-transform` or `json-split`.
+8. If your agent stores rules in `.md` but the standard or another tool expects JSON, use content conversion: `format: md-json` (inbound) and `format: json-md` (outbound), with the standard schema `{ "content": "<markdown>", "description": "optional" }` (see `context/pkg/rule/doc/rule.md`).
+9. If your tool uses a **single instruction file** at root (`AGENTS.md`, `CLAUDE.md`, etc.), map it as a `file` with `format: "file"` to `.agents/rules/<id>-agent.md`.
+10. Map your tool’s **commands / slash commands** to `workflows/` in the bridge. The native command folder name may differ (e.g. Cursor uses `commands/`, Claude Code might use `tasks/`).
+11. If your tool supports **sub-agents** or **custom agent modes**, map them to `agents/` in the bridge.
+12. **MCP:** If your tool has MCP config, always map it to the bridge’s **single list**: `mcp/mcp.json`. Inbound: from your native file (e.g. `mcp.json`, or `$.mcp` in a JSON) to `mcp/mcp.json`. Outbound: from `mcp/mcp.json` to your native format. **Do not** create per-agent files (`mcp/cursor-mcp.json`, etc.).
+
+## Base schema with paths, extensions, and transformations
+
+All comments in the generated YAML must be in English.
 
 ```yaml
 version: "1.0"
 agent:
-  id: "TU_ID"
-  name: "TU_NOMBRE"
+  id: "YOUR_ID"
+  name: "YOUR_NAME"
   ui:
-    icon: "gear"      # Codicon ID de VSCode o emoji
-    color: "#3498db"  # Color principal hexadecimal
-    description: "Breve descripción para listas y tooltips"
+    icon: "gear"      # VSCode Codicon ID or emoji
+    color: "#3498db"  # Main hex color
+    description: "Short description for lists and tooltips"
 
 paths:
-  - path: "TU_RUTA_WORKSPACE"   # ej. ".cursor/" o "rules.md"
+  - path: "YOUR_WORKSPACE_PATH"   # e.g. ".cursor/" or "rules.md"
     scope: "workspace"
-    type: "directory"            # o "file" si son archivos sueltos
-    purpose: "marker"            # o "sync_source"
-  - path: "TU_RUTA_HOME"        # ej. ".cursor" o ".gemini/antigravity"
+    type: "directory"             # or "file" for single files
+    purpose: "marker"              # or "sync_source"
+  - path: "YOUR_HOME_PATH"        # e.g. ".cursor" or ".gemini/antigravity"
     scope: "home"
     type: "directory"
     purpose: "config"
 
 mapping:
   inbound:
-    # [rules] ✅ Instrucciones persistentes → se sincronizan como reglas
+    # [rules] ✅ Persistent instructions → synced as rules
     - from: "rules/"
       to: "rules/"
       format: "directory"
-      source_ext: ".TU_EXTENSION" # (Opcional) Ej. ".mdc" (debe incluir el punto)
-      target_ext: ".md"           # (Opcional) La conversión en inbound hacia el puente
+      source_ext: ".YOUR_EXT"     # (Optional) e.g. ".mdc" (include the dot)
+      target_ext: ".md"           # (Optional) conversion into the bridge
 
-    # [agent-file] ✅ Archivo único de instrucciones en raíz → regla global
-    # Descomenta si tu herramienta usa un archivo como AGENTS.md, CLAUDE.md, GEMINI.md, etc.
+    # [agent-file] ✅ Single root instruction file → global rule
+    # Uncomment if your tool uses a file like AGENTS.md, CLAUDE.md, GEMINI.md, etc.
     # - from: "AGENTS.md"
-    #   to: "rules/TU_ID-agent.md"
+    #   to: "rules/YOUR_ID-agent.md"
     #   format: "file"
 
-    # [skills] Capacidades especializadas (carpetas con SKILL.md)
+    # [skills] Specialized capabilities (folders with SKILL.md)
     - from: "skills/"
       to: "skills/"
       format: "directory"
 
-    # [workflows] Comandos invocables por el usuario (slash commands, task prompts)
-    - from: "TU_CARPETA_COMMANDS/"  # ej. "commands/" en Cursor, "tasks/" en otros
+    # [workflows] User-invocable commands (slash commands, task prompts)
+    - from: "YOUR_COMMANDS_FOLDER/"  # e.g. "commands/" in Cursor, "tasks/" elsewhere
       to: "workflows/"
       format: "directory"
 
-    # [agents] Definiciones de sub-agentes o modos de agente personalizados
-    # Descomenta si tu herramienta soporta sub-agents
+    # [agents] Sub-agent or custom agent mode definitions
+    # Uncomment if your tool supports sub-agents
     # - from: "agents/"
     #   to: "agents/"
     #   format: "directory"
 
-    # [mcp] ❌ Config de herramientas externas, no reglas
-    # Descomenta si tu herramienta tiene configuración MCP separada
+    # [mcp] External tool config (single list in the bridge)
+    # All tools read/write the same canonical file; do not create mcp/<id>-mcp.json
     # - from: "mcp.json"
-    #   to: "mcp/TU_ID-mcp.json"
+    #   to: "mcp/mcp.json"
     #   format: "json-transform"
     #   extract: "$.mcpServers"
 
-    # [docs] ❌ Contexto de referencia, no reglas
+    # [docs] Reference context, not rules
     # - from: "docs/"
     #   to: "docs/"
     #   format: "directory"
 
-    # Ejemplo avanzado con JSON
+    # Advanced JSON example
     # - from: "config.json"
     #   to: "config-subset.json"
     #   format: "json-transform"
-    #   extract: "$.key.subkey"     # JSONPath opcional
-    #   adapter: "agent-mdc"        # Adaptador opcional
+    #   extract: "$.key.subkey"     # Optional JSONPath
+    #   adapter: "agent-mdc"        # Optional adapter
 
   outbound:
     # [rules] ✅
     - from: "rules/"
       to: "rules/"
       format: "directory"
-      source_ext: ".md"           # (Opcional si usaste target_ext arriba)
-      target_ext: ".TU_EXTENSION" # (Opcional si usaste source_ext arriba) Ej. ".mdc"
+      source_ext: ".md"           # (Optional if you used target_ext above)
+      target_ext: ".YOUR_EXT"     # (Optional if you used source_ext above) e.g. ".mdc"
 
     # [agent-file] ✅
-    # - from: "rules/TU_ID-agent.md"
+    # - from: "rules/YOUR_ID-agent.md"
     #   to: "AGENTS.md"
     #   format: "file"
 
@@ -156,7 +163,7 @@ mapping:
 
     # [workflows]
     - from: "workflows/"
-      to: "TU_CARPETA_COMMANDS/"  # ej. "commands/" en Cursor
+      to: "YOUR_COMMANDS_FOLDER/"  # e.g. "commands/" in Cursor
       format: "directory"
 
     # [agents]
@@ -164,14 +171,20 @@ mapping:
     #   to: "agents/"
     #   format: "directory"
 
+    # [mcp] Single bridge list → tool’s native format
+    # - from: "mcp/mcp.json"
+    #   to: "mcp.json"
+    #   format: "json-transform"
+    #   extract: "$.mcpServers"
+
 target_standard: ".agents/"
 ```
 
-## Ejemplos por tipo de agente
+## Examples by agent type
 
-### 1. Carpeta única (mismo nombre en workspace y home)
+### 1. Single folder (same name in workspace and home)
 
-Ejemplo: Cursor (`.cursor/` en proyecto, `.cursor` en home). *(No olvides el bloque agent y mapping completos)*
+Example: Cursor (`.cursor/` in project, `.cursor` in home). *(Remember to include the full agent and mapping blocks.)*
 
 ```yaml
 paths:
@@ -185,9 +198,9 @@ paths:
     purpose: "config"
 ```
 
-### 2. Paths distintos (nombres diferentes en workspace vs home)
+### 2. Different paths (different names in workspace vs home)
 
-Ejemplo: Antigravity (`.agent/` en proyecto, `.gemini/antigravity` en home).
+Example: Antigravity (`.agent/` in project, `.gemini/antigravity` in home).
 
 ```yaml
 paths:
@@ -201,9 +214,9 @@ paths:
     purpose: "config"
 ```
 
-### 3. Archivos sueltos en la raíz del proyecto
+### 3. Loose files at project root
 
-Ejemplo: agente que usa archivos en la raíz (ej. `rules.md`, `prompts.md`) en lugar de una carpeta.
+Example: agent that uses root-level files (e.g. `rules.md`, `prompts.md`) instead of a folder.
 
 ```yaml
 paths:
@@ -215,16 +228,15 @@ paths:
     scope: "workspace"
     type: "file"
     purpose: "sync_source"
-  - path: ".miagente"
+  - path: ".myagent"
     scope: "home"
     type: "directory"
     purpose: "config"
 ```
 
-### 4. Archivo único de instrucciones en raíz (agent-file)
+### 4. Single root instruction file (agent-file)
 
-Ejemplo: Claude Code (`CLAUDE.md`), OpenCode (`AGENTS.md`), Gemini (`GEMINI.md`), Cline (`.clinerules`).
-Este patrón **crea una regla** en `.agents/rules/<id>-agent.md`.
+Example: Claude Code (`CLAUDE.md`), OpenCode (`AGENTS.md`), Gemini (`GEMINI.md`), Cline (`.clinerules`). This pattern **creates a rule** at `.agents/rules/<id>-agent.md`.
 
 ```yaml
 paths:
@@ -246,7 +258,7 @@ mapping:
 
 ### 5. Commands / Slash commands (workflows)
 
-Ejemplo: Cursor usa `.cursor/commands/` para slash commands; estos se sincronizan como `workflows/` en el puente.
+Example: Cursor uses `.cursor/commands/` for slash commands; they sync as `workflows/` in the bridge.
 
 ```yaml
 mapping:
@@ -260,13 +272,11 @@ mapping:
       format: "directory"
 ```
 
-Cada archivo en `commands/` es un `.md` con frontmatter (`description`) que define un prompt reutilizable.
-Al sincronizar hacia el puente se copian tal cual a `.agents/workflows/`.
-Otra herramienta que soporte workflows puede leerlos y adaptarlos a su formato nativo de comandos.
+Each file in `commands/` is a `.md` with frontmatter (`description`) defining a reusable prompt. When syncing to the bridge they are copied as-is to `.agents/workflows/`. Another tool that supports workflows can read them and adapt to its native command format.
 
-### 6. Skills (capacidades especializadas)
+### 6. Skills (specialized capabilities)
 
-Ejemplo: Cursor usa `.cursor/skills/<nombre>/SKILL.md`; se sincronizan como `skills/` en el puente.
+Example: Cursor uses `.cursor/skills/<name>/SKILL.md`; they sync as `skills/` in the bridge.
 
 ```yaml
 mapping:
@@ -280,15 +290,11 @@ mapping:
       format: "directory"
 ```
 
-Cada skill es una **carpeta** con al menos un `SKILL.md` que contiene:
-- Frontmatter con `name` y `description` (para activación automática).
-- Workflow completo: cuándo usar, reglas internas, pasos, formato de salida.
-
-A diferencia de una **rule**, un skill no se aplica automáticamente: el agente lo activa cuando la tarea del usuario encaja con su `description`.
+Each skill is a **folder** with at least a `SKILL.md` containing: frontmatter with `name` and `description` (for auto-activation), and a full workflow (when to use, internal rules, steps, output format). Unlike a **rule**, a skill is not applied automatically: the agent activates it when the user’s task matches its `description`.
 
 ### 7. Sub-agents / Custom agent modes (agents)
 
-Ejemplo: Cursor soporta `.cursor/agents/` para definir modos de agente personalizados.
+Example: Cursor supports `.cursor/agents/` for custom agent modes.
 
 ```yaml
 mapping:
@@ -302,25 +308,29 @@ mapping:
       format: "directory"
 ```
 
-Cada sub-agent define una **personalidad diferenciada** con su propio alcance, permisos y restricciones.
-A diferencia de un workflow (que es una acción puntual), un sub-agent mantiene su contexto durante toda la sesión.
+Each sub-agent has a **distinct personality** with its own scope, permissions, and constraints. Unlike a workflow (a one-off action), a sub-agent keeps its context for the whole session.
 
-### 8. Configuración MCP (mcp)
+### 8. MCP configuration (mcp)
 
-Ejemplo: extraer configuración de servidores MCP de un JSON. Este patrón **NO crea reglas**, solo porta configuración de herramientas.
+In `.agents/` there is **one MCP list** (e.g. `mcp/mcp.json`). All tools sync with that list: inbound from native format to the canonical file, outbound from the canonical file to native format. **Do not** create one file per agent (`mcp/cursor-mcp.json`, `mcp/opencode-mcp.json`, etc.). This pattern **does not create rules**; it only carries tool configuration.
 
 ```yaml
 mapping:
   inbound:
     - from: "mcp.json"
-      to: "mcp/TU_ID-mcp.json"
+      to: "mcp/mcp.json"
+      format: "json-transform"
+      extract: "$.mcpServers"
+  outbound:
+    - from: "mcp/mcp.json"
+      to: "mcp.json"
       format: "json-transform"
       extract: "$.mcpServers"
 ```
 
-### 9. Transformación JSON avanzada (custom)
+### 9. Advanced JSON transformation (custom)
 
-Ejemplo: extraer configuración específica de un JSON arbitrario.
+Example: extract specific config from an arbitrary JSON.
 
 ```yaml
 mapping:
@@ -333,7 +343,21 @@ mapping:
 
 ---
 
-Responde con dos secciones:
+## Expected response
 
-1. **Tabla de capacidades soportadas**: lista las categorías del Paso 1 que soporta tu herramienta, indicando la ruta nativa y si crea reglas (✅/❌/⚠️).
-2. **Bloque YAML**: el archivo de configuración completo. El archivo debe guardarse en `.agents/rules/TU_ID.yaml`.
+Respond with **two sections**:
+
+1. **Capability table**  
+   List the Step 1 categories your tool supports, with native path and whether it creates rules (✅/❌/⚠️).
+
+2. **Full YAML block**  
+   The configuration file ready to save. The filename must be **`<id>.yaml`** under `.agents/rules/` (e.g. if `agent.id` is `cursor`, the file is `.agents/rules/cursor.yaml`). **All comments in the YAML must be in English.**
+
+**Pre-submit checklist:**
+
+- [ ] Inbound and outbound defined for each category the tool supports (symmetry).
+- [ ] MCP, if applicable: single target/source `mcp/mcp.json`; no `mcp/<id>-mcp.json`.
+- [ ] `paths` with correct `scope` (`workspace` vs `home`) and `purpose` (`marker`, `sync_source`, `config`).
+- [ ] File extensions: if the tool uses `.mdc` or something other than `.md`, use `source_ext`/`target_ext` in `rules/` mappings.
+- [ ] `target_standard: ".agents/"` at the end of the YAML.
+- [ ] All comments in the generated YAML are in English.

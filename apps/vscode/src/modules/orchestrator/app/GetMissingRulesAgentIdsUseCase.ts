@@ -10,7 +10,7 @@ export interface GetMissingRulesAgentIdsUseCaseProps {
 }
 
 /**
- * Returns agent ids that have no rule file in .agents/rules/.
+ * Returns agent ids that have no rule file in .agents/.ai/rules/.
  * Call after FetchAndInstallRules to detect tools that need rules created (e.g. via make_rule.md).
  */
 export class GetMissingRulesAgentIdsUseCase {
@@ -26,7 +26,7 @@ export class GetMissingRulesAgentIdsUseCase {
 	}
 
 	/**
-	 * Returns agent ids that have no rule file in .agents/rules/.
+	 * Returns agent ids that have no rule file in .agents/.ai/rules/.
 	 * @param workspaceRoot - The root directory of the workspace.
 	 * @param options - Optional parameters including specific agentIds to check.
 	 * @returns Array of agent IDs missing rule files.
@@ -36,7 +36,7 @@ export class GetMissingRulesAgentIdsUseCase {
 		const agentIds = options?.agentIds ?? config.agents.map((agent) => agent.id);
 		if (agentIds.length === 0) return [];
 
-		const rulesPath = join(workspaceRoot, '.agents', 'rules');
+		const rulesPath = join(workspaceRoot, '.agents', '.ai', 'rules');
 		const verifyUseCase = ClientModule.createVerifyRulesExistenceUseCase(rulesPath);
 		const results = await verifyUseCase.execute(agentIds);
 		return results.filter((r) => !r.exists).map((r) => r.agentId);

@@ -6,13 +6,17 @@ import { FsInstalledRuleRepository } from './infra/repo/FsInstalledRuleRepositor
 import { join } from 'node:path';
 
 export class ClientModule {
+	private static buildRulesPath(basePath?: string): string {
+		return basePath || join(process.cwd(), '.agents', '.ai', 'rules');
+	}
+
 	/**
 	 * Creates a configured instance of GetInstalledRuleUseCase.
 	 *
-	 * @param basePath Optional path to rules directory (defaults to .agents/rules)
+	 * @param basePath Optional path to rules directory (defaults to .agents/.ai/rules)
 	 */
 	static createGetInstalledRuleUseCase(basePath?: string): GetInstalledRuleUseCase {
-		const path = basePath || join(process.cwd(), '.agents', 'rules');
+		const path = this.buildRulesPath(basePath);
 		const repository = new FsInstalledRuleRepository({ basePath: path });
 		return new GetInstalledRuleUseCase(repository);
 	}
@@ -20,10 +24,10 @@ export class ClientModule {
 	/**
 	 * Creates a configured instance of ListInstalledRulesUseCase.
 	 *
-	 * @param basePath Optional path to rules directory (defaults to .agents/rules)
+	 * @param basePath Optional path to rules directory (defaults to .agents/.ai/rules)
 	 */
 	static createListInstalledRulesUseCase(basePath?: string): ListInstalledRulesUseCase {
-		const path = basePath || join(process.cwd(), '.agents', 'rules');
+		const path = this.buildRulesPath(basePath);
 		const repository = new FsInstalledRuleRepository({ basePath: path });
 		return new ListInstalledRulesUseCase(repository);
 	}
@@ -31,10 +35,10 @@ export class ClientModule {
 	/**
 	 * Creates a configured instance of VerifyRuleExistsUseCase.
 	 *
-	 * @param basePath Optional path to rules directory (defaults to .agents/rules)
+	 * @param basePath Optional path to rules directory (defaults to .agents/.ai/rules)
 	 */
 	static createVerifyRuleExistsUseCase(basePath?: string): VerifyRuleExistsUseCase {
-		const path = basePath || join(process.cwd(), '.agents', 'rules');
+		const path = this.buildRulesPath(basePath);
 		const repository = new FsInstalledRuleRepository({ basePath: path });
 		return new VerifyRuleExistsUseCase(repository);
 	}
@@ -42,10 +46,10 @@ export class ClientModule {
 	/**
 	 * Creates a configured instance of VerifyRulesExistenceUseCase.
 	 *
-	 * @param basePath Optional path to rules directory (defaults to .agents/rules)
+	 * @param basePath Optional path to rules directory (defaults to .agents/.ai/rules)
 	 */
 	static createVerifyRulesExistenceUseCase(basePath?: string): VerifyRulesExistenceUseCase {
-		const path = basePath || join(process.cwd(), '.agents', 'rules');
+		const path = this.buildRulesPath(basePath);
 		const repository = new FsInstalledRuleRepository({ basePath: path });
 		return new VerifyRulesExistenceUseCase(repository);
 	}

@@ -24,7 +24,7 @@ paths:
 # │  skills      ✅  .cursor/skills/ → capacidades bajo demanda │
 # │  workflows   ✅  .cursor/commands/ → slash commands          │
 # │  agents      ✅  .cursor/agents/ → sub-agents               │
-# │  mcp         ✅  .cursor/mcp.json → config externa           │
+# │  mcp         ✅  .cursor/mcp.json ↔ listado único .agents/mcp/mcp.json │
 # │  agent-file  ❌  No usa archivo único en raíz                │
 # │  docs        ❌  Sin carpeta docs propia                      │
 # └──────────────────────────────────────────────────────────────┘
@@ -55,9 +55,9 @@ mapping:
       to: "agents/"
       format: "directory"
 
-    # [mcp] ✅ Configuración de servidores MCP (no genera reglas)
+    # [mcp] ✅ Listado único en el puente (todas las herramientas sincronizan con mcp/mcp.json)
     - from: "mcp.json"
-      to: "mcp/cursor-mcp.json"
+      to: "mcp/mcp.json"
       format: "json-transform"
       extract: "$.mcpServers"
 
@@ -86,8 +86,8 @@ mapping:
       to: "agents/"
       format: "directory"
 
-    # [mcp] ✅
-    - from: "mcp/cursor-mcp.json"
+    # [mcp] ✅ Listado único del puente → Cursor
+    - from: "mcp/mcp.json"
       to: "mcp.json"
       format: "json-transform"
       extract: "$.mcpServers"

@@ -83,7 +83,7 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 	async syncAll(workspaceRoot: string): Promise<void> {
 		// 1. Get all installed rules using @dotagents/rule
 		const listRules = ClientModule.createListInstalledRulesUseCase(
-			join(workspaceRoot, '.agents', 'rules'),
+			join(workspaceRoot, '.agents', '.ai', 'rules'),
 		);
 		const rules = await listRules.execute();
 
@@ -134,7 +134,7 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		affectedPaths?: string[],
 	): Promise<{ writtenPaths: string[] }> {
 		const listRules = ClientModule.createListInstalledRulesUseCase(
-			join(workspaceRoot, '.agents', 'rules'),
+			join(workspaceRoot, '.agents', '.ai', 'rules'),
 		);
 		const rules = await listRules.execute();
 		const rule = rules.find((item) => item.id === agentId);
@@ -182,7 +182,7 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		affectedPaths?: string[],
 	): Promise<{ writtenPaths: string[] }> {
 		const listRules = ClientModule.createListInstalledRulesUseCase(
-			join(workspaceRoot, '.agents', 'rules'),
+			join(workspaceRoot, '.agents', '.ai', 'rules'),
 		);
 		const rules = await listRules.execute();
 		const rule = rules.find((item) => item.id === agentId);

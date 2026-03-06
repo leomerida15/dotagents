@@ -7,7 +7,9 @@ mock.module('vscode', getVscodeMock);
 const defaultExistsSync = (path: string) => {
 	if (!path.startsWith('/mock/root')) return realFs.existsSync(path);
 	return (
-		path.includes('/.cursor') || path.endsWith('cursor.yaml') || path.includes('.agents/rules/')
+		path.includes('/.cursor') ||
+		path.endsWith('cursor.yaml') ||
+		path.includes('.agents/.ai/rules/')
 	);
 };
 const existsSyncMock = mock(defaultExistsSync);

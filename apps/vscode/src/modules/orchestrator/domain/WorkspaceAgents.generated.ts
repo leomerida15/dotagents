@@ -24,7 +24,7 @@ export const WORKSPACE_KNOWN_AGENTS = [
     configPath: ".config/opencode",
     workspaceMarker: ".opencode",
     paths: [
-      { path: ".opencode", scope: "workspace", type: "file", purpose: "marker" },
+      { path: ".opencode/", scope: "workspace", type: "directory", purpose: "marker" },
       { path: ".config/opencode", scope: "home", type: "directory", purpose: "config" },
     ],
   }

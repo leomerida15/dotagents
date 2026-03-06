@@ -15,7 +15,7 @@ export interface FetchAndInstallRulesUseCaseProps {
 }
 
 /**
- * Fetches rules from GitHub for each detected agent and persists them to .agents/rules/.
+ * Fetches rules from GitHub for each detected agent and persists them to .agents/.ai/rules/.
  */
 export class FetchAndInstallRulesUseCase {
 	private readonly ruleProvider: IRuleProvider;
@@ -41,12 +41,12 @@ export class FetchAndInstallRulesUseCase {
 	}
 
 	/**
-	 * Fetches rules from GitHub for each detected agent and persists them to .agents/rules/.
+	 * Fetches rules from GitHub for each detected agent and persists them to .agents/.ai/rules/.
 	 * @param workspaceRoot - The root directory of the workspace.
 	 * @param options - Optional parameters including specific agentIds to fetch.
 	 */
 	async execute(workspaceRoot: string, options?: { agentIds?: string[] }): Promise<void> {
-		const rulesDir = join(workspaceRoot, this.dotAgentsFolder, 'rules');
+		const rulesDir = join(workspaceRoot, this.dotAgentsFolder, '.ai', 'rules');
 		await mkdir(rulesDir, { recursive: true });
 
 		let targetIds: string[];
