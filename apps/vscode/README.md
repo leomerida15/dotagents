@@ -8,7 +8,7 @@ By establishing a universal `.agents/` bridge directory in your workspace, DotAg
 
 ## Features
 
-- **Automatic IDE Detection**: Detects your active AI editor/tool on startup and automatically provisions the required workspace synchronization structure (`.agents/.ai/`).
+- **Automatic IDE Detection**: Detects your active AI editor/tool on startup and automatically provisions the required workspace synchronization structure (`.agents/`).
 - **Real-time Bidirectional Sync**: Watches for file modifications. Changes in your specific IDE folder (e.g., `.cursor/rules`) automatically synchronize to the universal `.agents/` bridge, and vice-versa.
 - **Cross-Tool Context Sharing**: Easily switch from Cursor to VSCode (using Cline) without losing your AI rules structure. DotAgents prompts you when it detects a tool change to seamlessly manage synchronization paths.
 - **Remote & Local Rules Engine**: Fetches and installs standard configuration capabilities automatically, and supports your own custom YAML rules seamlessly.
@@ -17,7 +17,7 @@ By establishing a universal `.agents/` bridge directory in your workspace, DotAg
 
 1. **Install the Extension** from the VSCode Marketplace (or build from source).
 2. **Open a Workspace**: As soon as you open a project, DotAgents detects your host IDE.
-3. **Automatic Provisioning**: If you don't have a `.agents/.ai/` structure in your workspace, DotAgents will automatically create it.
+3. **Automatic Provisioning**: If you don't have a `.agents/` structure in your workspace, DotAgents will automatically create it.
 4. **Tool Selection**: By default, it detects your current IDE based on the environment footprint. If it's a new or unrecognized tool, it will prompt you specifying that the IDE is not recognized and give you options to either configure it manually or create a new agent rule.
 
    ![Tool Selection](./access/initial_select_tool.png)
@@ -45,7 +45,7 @@ You can tweak the extension behavior in your VSCode `settings.json`:
 
 ## How It Works
 
-DotAgents utilizes an embedded rules engine using **YAML format** configurations stored in `.agents/.ai/rules/{agentId}.yaml`.
+DotAgents utilizes an embedded rules engine using **YAML format** configurations stored in `.agents/rules/{agentId}.yaml`.
 
 <img src="./access/folder_example.png" width="30%" alt="DotAgents Folder Structure">
 
@@ -57,7 +57,7 @@ These rules map inbound and outbound file paths to perform reactive, incremental
 
 DotAgents dynamically merges known agents with your custom definitions. If your favorite AI app is not natively supported yet, you can easily integrate it by creating your own rule:
 
-1. Create a new YAML file inside your workspace at `.agents/.ai/rules/`. For example, `.agents/.ai/rules/my-custom-agent.yaml`.
+1. Create a new YAML file inside your workspace at `.agents/rules/`. For example, `.agents/rules/my-custom-agent.yaml`.
 2. Define the agent settings including its `id`, `name`, `paths`, and `mappings` following the standard DotAgents rule format.
 3. Open the Command Palette and run `DotAgents: Add Agent/IDE Manually`.
 4. Your new agent will appear in the list under the dynamically discovered rules. Select it, and DotAgents will immediately synchronize according to your defined mappings.

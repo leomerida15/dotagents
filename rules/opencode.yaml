@@ -30,7 +30,7 @@ mapping:
       extract: "$.mcp"
       adapter: "mcp-standard"
     - from: "opencode.json"
-      to: "rules/"
+      to: "agents/"
       format: "json-split"
       extract: "$.agent"
       adapter: "agent-json"
@@ -43,5 +43,10 @@ mapping:
       to: "skills/"
     - from: "workflows/"
       to: "workflows/"
+    # Reconstructs opencode.json from .agents/agents/*.json, merging back under "agent" key
+    - from: "agents/"
+      to: "opencode.json"
+      format: "json-merge"
+      adapter: "opencode-config"
 
 target_standard: ".agents/"

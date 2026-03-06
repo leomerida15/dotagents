@@ -1,16 +1,18 @@
-
 /**
  * Build script: compiles TypeScript and emits declaration files.
+ * Invokes the known-agents generation script before compiling the main extension entry point.
+ *
+ * @returns A promise resolving when the build completes successfully
  */
 export async function build(): Promise<void> {
-	const genProc = Bun.spawn(['bun', 'run', 'scripts/generate-known-agents.ts'], {
+	const generationProcess = Bun.spawn(['bun', 'run', '-b', 'scripts/generate-known-agents.ts'], {
 		cwd: process.cwd(),
 		stdout: 'inherit',
 		stderr: 'inherit',
 	});
-	const genExit = await genProc.exited;
-	if (genExit !== 0) {
-		throw new Error(`generate-known-agents.ts failed with code ${genExit}`);
+	const exitCode = await generationProcess.exited;
+	if (exitCode !== 0) {
+		throw new Error(`generate-known-agents.ts failed with code ${exitCode}`);
 	}
 	console.log('Building...');
 	await Bun.build({
@@ -23,7 +25,6 @@ export async function build(): Promise<void> {
 		external: ['vscode'],
 	});
 
-
 	console.log('Build completed');
 }
 
@@ -31,8 +32,8 @@ const isMain =
 	process.argv[1]?.endsWith('bunstart.build.ts') ||
 	process.argv[1]?.endsWith('bunstart.build.js');
 if (isMain) {
-	build().catch((e) => {
-		console.error('Build failed', e);
+	build().catch((buildError) => {
+		console.error('Build failed', buildError);
 		process.exit(1);
 	});
 }

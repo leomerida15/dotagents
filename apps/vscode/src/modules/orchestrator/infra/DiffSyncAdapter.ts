@@ -8,7 +8,7 @@ import {
 	type SyncResultDTO,
 	type MappingRuleDTO,
 } from '@dotagents/diff';
-import { IDiffSyncEngine } from '../app/ports/IDiffSyncEngine';
+import { type IDiffSyncEngine } from '../app/ports/IDiffSyncEngine';
 import type { ILogger } from '../app/ports/ILogger';
 import { NodeFileSystem } from './NodeFileSystem';
 import { NodeConfigRepository } from './NodeConfigRepository';
@@ -33,17 +33,21 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 	private configRepository: NodeConfigRepository;
 	private logger: ILogger | undefined;
 
-	constructor(props: DiffSyncAdapterProps) {
-		this.configRepository = props.configRepository;
-		this.logger = props.logger;
+	/**
+	 * Constructs the DiffSyncAdapter with the given configuration and logger.
+	 * @param props - Configuration object containing configRepository and optional logger.
+	 */
+	constructor({ configRepository, logger }: DiffSyncAdapterProps) {
+		this.configRepository = configRepository;
+		this.logger = logger;
 		this.fileSystem = new NodeFileSystem();
 
 		const defaultInterpreter = new DefaultSyncInterpreter();
 		const jsonInterpreter = new JsonSyncInterpreter();
-		const compositeInterpreter = new CompositeSyncInterpreter(
+		const compositeInterpreter = new CompositeSyncInterpreter({
 			defaultInterpreter,
 			jsonInterpreter,
-		);
+		});
 
 		this.syncProject = new SyncProjectUseCase({
 			interpreter: compositeInterpreter,
@@ -51,11 +55,20 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		});
 	}
 
-	/** Exposes sync by rules/paths for migration use case. */
+	/**
+	 * Executes the sync project use case with the given request.
+	 * @param request - The sync project request containing rules and paths.
+	 * @returns The result of the sync operation.
+	 */
 	async execute(request: SyncProjectRequestDTO): Promise<SyncResultDTO> {
 		return this.syncProject.execute(request);
 	}
 
+	/**
+	 * Detects the current agent from workspace markers.
+	 * @param workspaceRoot - The root directory of the workspace.
+	 * @returns The agent ID if found, null otherwise.
+	 */
 	private detectCurrentAgentFromWorkspace(workspaceRoot: string): string | null {
 		for (const { id, dir } of WORKSPACE_AGENT_MARKERS) {
 			if (existsSync(join(workspaceRoot, dir))) return id;
@@ -63,10 +76,14 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		return null;
 	}
 
+	/**
+	 * Synchronizes all installed agents in the workspace.
+	 * @param workspaceRoot - The root directory of the workspace.
+	 */
 	async syncAll(workspaceRoot: string): Promise<void> {
 		// 1. Get all installed rules using @dotagents/rule
 		const listRules = ClientModule.createListInstalledRulesUseCase(
-			join(workspaceRoot, '.agents', '.ai', 'rules'),
+			join(workspaceRoot, '.agents', 'rules'),
 		);
 		const rules = await listRules.execute();
 
@@ -104,13 +121,20 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		}
 	}
 
+	/**
+	 * Synchronizes a specific agent's rules to the workspace.
+	 * @param workspaceRoot - The root directory of the workspace.
+	 * @param agentId - The ID of the agent to sync.
+	 * @param affectedPaths - Optional list of affected paths to optimize sync.
+	 * @returns Object containing the list of written paths.
+	 */
 	async syncAgent(
 		workspaceRoot: string,
 		agentId: string,
 		affectedPaths?: string[],
 	): Promise<{ writtenPaths: string[] }> {
 		const listRules = ClientModule.createListInstalledRulesUseCase(
-			join(workspaceRoot, '.agents', '.ai', 'rules'),
+			join(workspaceRoot, '.agents', 'rules'),
 		);
 		const rules = await listRules.execute();
 		const rule = rules.find((item) => item.id === agentId);
@@ -145,13 +169,20 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		return { writtenPaths };
 	}
 
+	/**
+	 * Synchronizes rules from the workspace back to the agent's source root (outbound).
+	 * @param workspaceRoot - The root directory of the workspace.
+	 * @param agentId - The ID of the agent to sync.
+	 * @param affectedPaths - Optional list of affected paths to optimize sync.
+	 * @returns Object containing the list of written paths.
+	 */
 	async syncOutboundAgent(
 		workspaceRoot: string,
 		agentId: string,
 		affectedPaths?: string[],
 	): Promise<{ writtenPaths: string[] }> {
 		const listRules = ClientModule.createListInstalledRulesUseCase(
-			join(workspaceRoot, '.agents', '.ai', 'rules'),
+			join(workspaceRoot, '.agents', 'rules'),
 		);
 		const rules = await listRules.execute();
 		const rule = rules.find((item) => item.id === agentId);
@@ -193,12 +224,23 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		return { writtenPaths };
 	}
 
+	/**
+	 * Synchronizes a new agent (both inbound and outbound).
+	 * @param workspaceRoot - The root directory of the workspace.
+	 * @param agentId - The ID of the new agent to sync.
+	 * @returns Object containing the combined list of written paths.
+	 */
 	async syncNew(workspaceRoot: string, agentId: string): Promise<{ writtenPaths: string[] }> {
 		const { writtenPaths: outPaths } = await this.syncOutboundAgent(workspaceRoot, agentId);
 		const { writtenPaths: inPaths } = await this.syncAgent(workspaceRoot, agentId);
 		return { writtenPaths: [...outPaths, ...inPaths] };
 	}
 
+	/**
+	 * Extracts the list of written file paths from a sync result.
+	 * @param result - The sync result containing actions performed.
+	 * @returns Array of written file paths.
+	 */
 	private extractWrittenPaths(result: SyncResultDTO): string[] {
 		const paths: string[] = [];
 		for (const action of result.actionsPerformed) {

@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { SyncStatus } from '../domain/SyncState';
-import { IDiffSyncEngine } from './ports/IDiffSyncEngine';
+import type { IDiffSyncEngine } from './ports/IDiffSyncEngine';
 import type { ILogger } from './ports/ILogger';
 import * as vscode from 'vscode';
 import { NodeConfigRepository } from '../infra/NodeConfigRepository';
@@ -29,6 +29,10 @@ export interface StartSyncOrchestrationResult {
     completed: boolean;
 }
 
+/**
+ * Use case responsible for orchestrating the overall synchronization process.
+ * Manages UI updates, project initialization, rule fetching, and executing the sync engine.
+ */
 export class StartSyncOrchestration {
     private statusBar: { update: (status: SyncStatus, message?: string) => void };
     private syncEngine: IDiffSyncEngine;
@@ -56,6 +60,12 @@ export class StartSyncOrchestration {
         this.logger = logger;
     }
 
+    /**
+     * Executes the orchestration logic for synchronization.
+     *
+     * @param options Orchestration options (direction, skipping selection)
+     * @returns A promise resolving to an object indicating if the orchestration completed successfully
+     */
     async execute(options?: { direction?: 'inbound' | 'outbound'; skipAgentSelection?: boolean }): Promise<StartSyncOrchestrationResult> {
         this.statusBar.update(SyncStatus.SYNCING);
 
@@ -84,7 +94,7 @@ export class StartSyncOrchestration {
                 }
                 // Fetch rules for selected agent BEFORE migrate (Sprint 3: migration uses YAML rules)
                 await this.fetchAndInstallRules.execute(workspaceRoot, { agentIds: [selectedAgentId] });
-                const rulesFile = join(workspaceRoot, '.agents', '.ai', 'rules', `${selectedAgentId}.yaml`);
+                const rulesFile = join(workspaceRoot, '.agents', 'rules', `${selectedAgentId}.yaml`);
                 if (!existsSync(rulesFile)) {
                     this.statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${selectedAgentId}`);
                     return { completed: false };
@@ -142,7 +152,7 @@ export class StartSyncOrchestration {
                 else console.warn('Missing-rules detection or notification failed:', err?.message ?? err);
             }
 
-			// Guard: do not sync if selected agent has no local rules (Sprint 3)
+            // Guard: do not sync if selected agent has no local rules (Sprint 3)
             if (missingIds.includes(selectedAgentId)) {
                 this.statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${selectedAgentId}`);
                 return { completed: false };

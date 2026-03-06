@@ -49,6 +49,12 @@ export class MigrateExistingAgentsToBridgeUseCase {
 		this.logger = logger;
 	}
 
+	/**
+	 * Executes the migration process for all relevant IDE agent folders.
+	 * 
+	 * @param input Migration parameters including workspace root and optionally a specific agent to migrate
+	 * @returns The list of migrated agents
+	 */
 	async execute(input: MigrateExistingAgentsInput): Promise<MigrateExistingAgentsResult> {
 		const { workspaceRoot, selectedAgentId } = input;
 
@@ -78,7 +84,7 @@ export class MigrateExistingAgentsToBridgeUseCase {
 			return { migrated: [] };
 		}
 
-		const rulesDir = join(workspaceRoot, '.agents', '.ai', 'rules');
+		const rulesDir = join(workspaceRoot, '.agents', 'rules');
 		const getRule = ClientModule.createGetInstalledRuleUseCase(rulesDir);
 
 		// Create minimal .agents structure (do not create state.json)

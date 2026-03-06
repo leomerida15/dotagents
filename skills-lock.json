@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "tdd-test-writer": {
+      "source": "am-will/codex-skills",
+      "sourceType": "github",
+      "computedHash": "d12b7bec698ceb6491f81682fb9aa2e56b5376c5741fae4022d6b413edccf181"
+    }
+  }
+}

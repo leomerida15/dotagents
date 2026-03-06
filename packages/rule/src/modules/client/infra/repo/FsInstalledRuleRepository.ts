@@ -1,15 +1,44 @@
-
 import * as yaml from 'js-yaml';
 import type { IInstalledRuleRepository } from '../../app';
-import { join } from 'node:path'
+import { join } from 'node:path';
 import { AgentID, InstalledRule } from '../../domain';
 import { accessSync, readFileSync, readdirSync } from 'node:fs';
 import { YamlMapper } from 'src/utils/infra';
 import { RuleSourceType } from 'src/utils/domain';
 
-export class FsInstalledRuleRepository implements IInstalledRuleRepository {
-	constructor(private readonly basePath: string = join(process.cwd(), '.agents', '.ai', 'rules')) { }
+/**
+ * Properties for configuring the FsInstalledRuleRepository.
+ */
+export interface FsInstalledRuleRepositoryProps {
+	basePath?: string;
+}
 
+/**
+ * Filesystem-based implementation of IInstalledRuleRepository.
+ * Reads rule YAML files from the filesystem.
+ */
+export class FsInstalledRuleRepository implements IInstalledRuleRepository {
+	private readonly basePath: string;
+
+	/**
+	 * Creates a filesystem repository for installed YAML rules.
+	 *
+	 * @param props - Optional base path where rule files are stored
+	 */
+	constructor({ basePath }: FsInstalledRuleRepositoryProps = {}) {
+		this.basePath = basePath ?? join(process.cwd(), '.agents', 'rules');
+	}
+
+	/**
+	 * Checks if a rule file exists for the given agent ID.
+	 * @param agentId - The ID of the agent.
+	 * @returns True if the rule exists, false otherwise.
+	 */
+	/**
+	 * Checks if a rule file exists for the given agent ID.
+	 * @param agentId - The ID of the agent.
+	 * @returns True if the rule exists, false otherwise.
+	 */
 	existsRule(agentId: AgentID): boolean {
 		const filePath = join(this.basePath, `${agentId.toString()}.yaml`);
 		try {
@@ -20,6 +49,16 @@ export class FsInstalledRuleRepository implements IInstalledRuleRepository {
 		}
 	}
 
+	/**
+	 * Gets the rule for a specific agent ID.
+	 * @param agentId - The ID of the agent.
+	 * @returns The installed rule or null if not found.
+	 */
+	/**
+	 * Gets the rule for a specific agent ID.
+	 * @param agentId - The ID of the agent.
+	 * @returns The installed rule or null if not found.
+	 */
 	getRule(agentId: AgentID): InstalledRule | null {
 		const filePath = join(this.basePath, `${agentId.toString()}.yaml`);
 
@@ -46,10 +85,18 @@ export class FsInstalledRuleRepository implements IInstalledRuleRepository {
 		}
 	}
 
+	/**
+	 * Gets all installed rules from the filesystem.
+	 * @returns Array of installed rules.
+	 */
+	/**
+	 * Gets all installed rules from the filesystem.
+	 * @returns Array of installed rules.
+	 */
 	getAllRules(): InstalledRule[] {
 		try {
 			const files = readdirSync(this.basePath);
-			const yamlFiles = files.filter((f) => f.endsWith('.yaml'));
+			const yamlFiles = files.filter((fileName) => fileName.endsWith('.yaml'));
 
 			const rules: InstalledRule[] = [];
 

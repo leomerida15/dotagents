@@ -8,6 +8,9 @@ import { AgentTimestamp } from '../../domain/value-objects/AgentTimestamp';
 import { MappingRule } from '../../domain/value-objects/MappingRule';
 import type { IConfigRepository } from '../../domain/ports/IConfigRepository';
 
+/**
+ * Properties for configuring the BunConfigRepository.
+ */
 interface BunConfigRepositoryProps {
 	dotAgentsFolder?: string;
 	syncFile?: string;
@@ -21,10 +24,19 @@ interface PersistedConfigData {
 	agents: any[];
 }
 
+/**
+ * Bun-specific implementation of IConfigRepository.
+ * Persists configuration to .agents/.ai/state.json.
+ */
 export class BunConfigRepository implements IConfigRepository {
 	private readonly DOT_AGENTS_FOLDER: string;
 	private readonly SYNC_FILE: string;
 
+	/**
+	 * Creates a Bun repository for reading and persisting sync state.
+	 *
+	 * @param props - Optional configuration for folder and state file names
+	 */
 	constructor({
 		dotAgentsFolder = '.agents',
 		syncFile = 'state.json',
@@ -33,49 +45,53 @@ export class BunConfigRepository implements IConfigRepository {
 		this.SYNC_FILE = syncFile;
 	}
 
+	/**
+	 * Saves the configuration to the workspace.
+	 * @param config - The configuration object to save.
+	 */
 	public async save(config: Configuration): Promise<void> {
 		const agentsPath = join(config.workspaceRoot, this.DOT_AGENTS_FOLDER);
 		const aiPath = join(agentsPath, '.ai');
 		const syncPath = join(aiPath, this.SYNC_FILE);
 
-		// Create .agents folder if it doesn't exist
 		await mkdir(agentsPath, { recursive: true });
-
-		// Create .agents/.ai folder
 		await mkdir(aiPath, { recursive: true });
 
-		// Prepare data to save (Manifest + Agents)
 		const data: PersistedConfigData = {
 			manifest: config.manifest.toJSON(),
 			agents: config.agents.map((agent) => ({
 				id: agent.id,
 				name: agent.name,
 				sourceRoot: agent.sourceRoot,
-			inbound: agent.inboundRules.map((r) => ({
-				from: r.from,
-				to: r.to,
-				format: r.format,
-				...(r.sourceExt != null && { sourceExt: r.sourceExt }),
-				...(r.targetExt != null && { targetExt: r.targetExt }),
-			})),
-			outbound: agent.outboundRules.map((r) => ({
-				from: r.from,
-				to: r.to,
-				format: r.format,
-				...(r.sourceExt != null && { sourceExt: r.sourceExt }),
-				...(r.targetExt != null && { targetExt: r.targetExt }),
-			})),
+				inbound: agent.inboundRules.map((rule) => ({
+					from: rule.from,
+					to: rule.to,
+					format: rule.format,
+					...(rule.sourceExt != null && { sourceExt: rule.sourceExt }),
+					...(rule.targetExt != null && { targetExt: rule.targetExt }),
+				})),
+				outbound: agent.outboundRules.map((rule) => ({
+					from: rule.from,
+					to: rule.to,
+					format: rule.format,
+					...(rule.sourceExt != null && { sourceExt: rule.sourceExt }),
+					...(rule.targetExt != null && { targetExt: rule.targetExt }),
+				})),
 			})),
 		};
 
 		await writeFile(syncPath, JSON.stringify(data, null, 2));
 
-		// Ensure subfolders rules, skills, mcp exist
-		await mkdir(join(aiPath, 'rules'), { recursive: true });
-		await mkdir(join(aiPath, 'skills'), { recursive: true });
-		await mkdir(join(aiPath, 'mcp'), { recursive: true });
+		await mkdir(join(agentsPath, 'rules'), { recursive: true });
+		await mkdir(join(agentsPath, 'skills'), { recursive: true });
+		await mkdir(join(agentsPath, 'mcp'), { recursive: true });
 	}
 
+	/**
+	 * Checks if the configuration file exists in the workspace.
+	 * @param workspaceRoot - The root directory of the workspace.
+	 * @returns True if the configuration exists, false otherwise.
+	 */
 	public async exists(workspaceRoot: string): Promise<boolean> {
 		const syncPath = join(workspaceRoot, this.DOT_AGENTS_FOLDER, '.ai', this.SYNC_FILE);
 		try {
@@ -86,6 +102,11 @@ export class BunConfigRepository implements IConfigRepository {
 		}
 	}
 
+	/**
+	 * Loads the configuration from the workspace.
+	 * @param workspaceRoot - The root directory of the workspace.
+	 * @returns The loaded configuration object.
+	 */
 	public async load(workspaceRoot: string): Promise<Configuration> {
 		const syncPath = join(workspaceRoot, this.DOT_AGENTS_FOLDER, '.ai', this.SYNC_FILE);
 
@@ -93,22 +114,20 @@ export class BunConfigRepository implements IConfigRepository {
 			const fileContent = await readFile(syncPath, 'utf8');
 			const data = JSON.parse(fileContent) as PersistedConfigData;
 
-			// Reconstruct manifest (filter 'agents' key for backward compatibility)
 			const rawAgents = data.manifest?.agents ?? {};
 			const manifestAgents = Object.fromEntries(
 				Object.entries(rawAgents)
 					.filter(([key]) => key !== 'agents')
-					.map(([key, val]) => [
+					.map(([key, value]) => [
 						key,
-						AgentTimestamp.create(val as { lastProcessedAt: number }),
-					])
+						AgentTimestamp.create(value as { lastProcessedAt: number }),
+					]),
 			);
 			const manifest = SyncManifest.create({
 				...data.manifest,
 				agents: manifestAgents,
 			});
 
-			// Reconstruct agents
 			const agents = (data.agents || []).map((agentProps) => {
 				return Agent.create({
 					...agentProps,

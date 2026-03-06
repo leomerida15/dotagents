@@ -1,5 +1,5 @@
 ---
-trigger: always_on
+alwaysApply: false
 ---
 
 # Architecture Standards
@@ -13,16 +13,16 @@ All packages and applications must follow the structure defined in `packages/dif
 ### Structure
 
 - **Types**:
-  - `apps/` for end-user applications (CLI, VSCode extensions, etc.).
-  - `packages/` for reusable libraries and core logic.
+    - `apps/` for end-user applications (CLI, VSCode extensions, etc.).
+    - `packages/` for reusable libraries and core logic.
 
 - **Internal Organization**:
-  - **Source Directory**: `src/`
-  - **Modules**: Business logic is divided into vertical slices under `src/modules/`.
-  - **Layers**: Each module MUST have the following layers:
-    - **domain/**: Enterprise logic, entities, value objects. No dependencies.
-    - **app/**: Application logic, use cases, ports. Depends on Domain.
-    - **infra/**: External adapters, repositories, implementations. Depends on Domain/App.
+    - **Source Directory**: `src/`
+    - **Modules**: Business logic is divided into vertical slices under `src/modules/`.
+    - **Layers**: Each module MUST have the following layers:
+        - **domain/**: Enterprise logic, entities, value objects. No dependencies.
+        - **app/**: Application logic, use cases, ports. Depends on Domain.
+        - **infra/**: External adapters, repositories, implementations. Depends on Domain/App.
 
 ### Example Structure
 
@@ -44,12 +44,12 @@ Documentation and context must be organized mirroring the code structure, as see
 
 - **Root**: `context/`
 - **Partitioning**:
-  - `context/pkg/<package-name>/` corresponds to `packages/<package-name>/`.
-  - `context/apps/<app-name>/` corresponds to `apps/<app-name>/`.
+    - `context/pkg/<package-name>/` corresponds to `packages/<package-name>/`.
+    - `context/apps/<app-name>/` corresponds to `apps/<app-name>/`.
 
 - **Module Context**:
-  - Each code module inside `src/modules/` should have a corresponding markdown file in the context directory.
-  - Example: `packages/diff/src/modules/sync` -> `context/pkg/diff/sync.md`.
+    - Each code module inside `src/modules/` should have a corresponding markdown file in the context directory.
+    - Example: `packages/diff/src/modules/sync` -> `context/pkg/diff/sync.md`.
 
 - **General Context**:
-  - High-level documentation uses descriptive names like `what-it-is.md` or `readme.md`.
+    - High-level documentation uses descriptive names like `what-it-is.md` or `readme.md`.

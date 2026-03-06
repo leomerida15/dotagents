@@ -1,11 +1,14 @@
 /**
- * Build-time script: reads rules/*.yaml and generates WorkspaceAgents.generated.ts
+ * Build-time script: reads <REPO_ROOT>/rules/*.yaml and generates WorkspaceAgents.generated.ts
  * with WORKSPACE_KNOWN_AGENTS. Run from apps/vscode (cwd = apps/vscode).
  */
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import yaml from 'js-yaml';
 
+/**
+ * Describes a path entry declared in a rule YAML file.
+ */
 interface PathEntry {
 	path: string;
 	scope?: 'workspace' | 'home';
@@ -13,6 +16,9 @@ interface PathEntry {
 	purpose?: 'marker' | 'sync_source' | 'config';
 }
 
+/**
+ * Partial YAML schema consumed by the known-agents generator.
+ */
 interface YamlSchema {
 	agent?: { id?: string; name?: string; source_root?: string; paths?: PathEntry[] };
 	source_root?: string;
@@ -20,11 +26,8 @@ interface YamlSchema {
 }
 
 const REPO_ROOT = join(process.cwd(), '..', '..');
-const RULES_DIR_CANDIDATES = [
-	join(REPO_ROOT, '.agents', 'rules'),
-	join(REPO_ROOT, 'rules'),
-	join(REPO_ROOT, '.agents', '.ai', 'rules'),
-];
+/** Build-time only: read from repo root rules, not .agents/rules */
+const RULES_DIR = join(REPO_ROOT, 'rules');
 const OUT_PATH = join(
 	process.cwd(),
 	'src',
@@ -34,11 +37,18 @@ const OUT_PATH = join(
 	'WorkspaceAgents.generated.ts',
 );
 
+/**
+ * Derives the workspace marker directory from the provided paths or source root.
+ * 
+ * @param paths The list of path entries associated with the agent
+ * @param sourceRoot The default source root directory
+ * @returns The resolved workspace marker path
+ */
 function deriveWorkspaceMarker(paths: PathEntry[] | undefined, sourceRoot: string): string {
 	if (paths != null && paths.length > 0) {
-		const workspacePaths = paths.filter((p) => p.scope === 'workspace');
+		const workspacePaths = paths.filter((pathEntry) => pathEntry.scope === 'workspace');
 		const markerOrSync = workspacePaths.find(
-			(p) => p.purpose === 'marker' || p.purpose === 'sync_source',
+			(pathEntry) => pathEntry.purpose === 'marker' || pathEntry.purpose === 'sync_source',
 		);
 		if (markerOrSync) return markerOrSync.path.replace(/\/$/, '');
 		const first = workspacePaths[0];
@@ -47,24 +57,43 @@ function deriveWorkspaceMarker(paths: PathEntry[] | undefined, sourceRoot: strin
 	return sourceRoot.replace(/\/$/, '');
 }
 
+/**
+ * Derives the configuration file path from the provided paths or source root.
+ * 
+ * @param paths The list of path entries associated with the agent
+ * @param sourceRoot The default source root directory
+ * @returns The resolved configuration file path
+ */
 function deriveConfigPath(paths: PathEntry[] | undefined, sourceRoot: string): string {
 	if (paths != null && paths.length > 0) {
-		const homeConfig = paths.find((p) => p.scope === 'home' && p.purpose === 'config');
+		const homeConfig = paths.find((pathEntry) => pathEntry.scope === 'home' && pathEntry.purpose === 'config');
 		if (homeConfig) return homeConfig.path;
 	}
 	return sourceRoot.replace(/\/$/, '');
 }
 
-function pathEntryToLiteral(p: PathEntry): string {
+/**
+ * Converts a PathEntry object into a stringified object literal.
+ * 
+ * @param pathEntry The path entry object to stringify
+ * @returns The stringified representation of the path entry
+ */
+function pathEntryToLiteral(pathEntry: PathEntry): string {
 	const parts = [
-		`path: ${JSON.stringify(p.path)}`,
-		p.scope != null ? `scope: ${JSON.stringify(p.scope)}` : null,
-		p.type != null ? `type: ${JSON.stringify(p.type)}` : null,
-		p.purpose != null ? `purpose: ${JSON.stringify(p.purpose)}` : null,
+		`path: ${JSON.stringify(pathEntry.path)}`,
+		pathEntry.scope != null ? `scope: ${JSON.stringify(pathEntry.scope)}` : null,
+		pathEntry.type != null ? `type: ${JSON.stringify(pathEntry.type)}` : null,
+		pathEntry.purpose != null ? `purpose: ${JSON.stringify(pathEntry.purpose)}` : null,
 	].filter(Boolean);
 	return `{ ${parts.join(', ')} }`;
 }
 
+/**
+ * Converts a known agent object into a stringified object literal.
+ * 
+ * @param agent The agent object containing id, configPath, workspaceMarker, and paths
+ * @returns The stringified representation of the known agent
+ */
 function knownAgentToLiteral(agent: {
 	id: string;
 	configPath: string;
@@ -73,7 +102,7 @@ function knownAgentToLiteral(agent: {
 }): string {
 	const pathsLiteral =
 		agent.paths != null && agent.paths.length > 0
-			? `paths: [\n      ${agent.paths.map((p) => pathEntryToLiteral(p)).join(',\n      ')},\n    ]`
+			? `paths: [\n      ${agent.paths.map((pathEntry) => pathEntryToLiteral(pathEntry)).join(',\n      ')},\n    ]`
 			: '';
 	return `  {
     id: ${JSON.stringify(agent.id)},
@@ -82,25 +111,23 @@ function knownAgentToLiteral(agent: {
 ${pathsLiteral ? `    ${pathsLiteral},\n` : ''}  }`;
 }
 
+/**
+ * Main execution function.
+ * Reads rule YAML files from the workspace root and generates a TypeScript
+ * file containing the list of known agents and their configurations.
+ * 
+ * @returns A promise that resolves when the generation is complete
+ */
 async function main(): Promise<void> {
-	let rulesDir: string | null = null;
 	let entries: { name: string }[] = [];
-	for (const candidate of RULES_DIR_CANDIDATES) {
-		try {
-			const dirEntries = await readdir(candidate, { withFileTypes: true });
-			rulesDir = candidate;
-			entries = dirEntries
-				.filter((e) => e.isFile() && e.name.endsWith('.yaml'))
-				.map((e) => ({ name: e.name }));
-			break;
-		} catch {
-			// Try next candidate.
-		}
-	}
-
-	if (rulesDir == null) {
+	try {
+		const dirEntries = await readdir(RULES_DIR, { withFileTypes: true });
+		entries = dirEntries
+			.filter((e) => e.isFile() && e.name.endsWith('.yaml'))
+			.map((e) => ({ name: e.name }));
+	} catch {
 		console.warn(
-			`No rules directory found. Looked in: ${RULES_DIR_CANDIDATES.join(', ')}. Generating empty known agents list.`,
+			`No rules directory found at ${RULES_DIR}. Generating empty known agents list.`,
 		);
 	}
 
@@ -112,7 +139,7 @@ async function main(): Promise<void> {
 	}> = [];
 
 	for (const { name } of entries) {
-		const filePath = join(rulesDir ?? '', name);
+		const filePath = join(RULES_DIR, name);
 		let content: string;
 		try {
 			content = await readFile(filePath, 'utf-8');
@@ -142,11 +169,11 @@ async function main(): Promise<void> {
 		const sourceRootFromPaths =
 			paths != null && paths.length > 0
 				? (() => {
-						const ws = paths.filter((p) => p.scope === 'workspace');
-						const m = ws.find(
-							(p) => p.purpose === 'marker' || p.purpose === 'sync_source',
+						const workspacePaths = paths.filter((pathEntry) => pathEntry.scope === 'workspace');
+						const markerOrSync = workspacePaths.find(
+							(pathEntry) => pathEntry.purpose === 'marker' || pathEntry.purpose === 'sync_source',
 						);
-						return (m ?? ws[0])?.path;
+						return (markerOrSync ?? workspacePaths[0])?.path;
 					})()
 				: null;
 		const sourceRoot = sourceRootFromPaths ?? agent?.source_root ?? schema.source_root ?? '.';
