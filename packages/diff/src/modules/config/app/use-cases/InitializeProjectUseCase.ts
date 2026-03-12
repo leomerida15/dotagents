@@ -4,7 +4,10 @@ import type { IAgentScanner } from '../../domain/ports/IAgentScanner';
 import type { IConfigRepository } from '../../domain/ports/IConfigRepository';
 import type { IRuleProvider } from '../../domain/ports/IRuleProvider';
 import { InitializeProjectSchema, type InitializeProjectDTO } from '../dto/InitializeProject.dto';
-import { RuleFetchException, ManifestInitializationException } from '../exceptions/ConfigExceptions';
+import {
+	RuleFetchException,
+	ManifestInitializationException,
+} from '../exceptions/ConfigExceptions';
 
 interface InitializeProjectUseCaseProps {
 	ruleProvider: IRuleProvider;
@@ -32,7 +35,9 @@ export class InitializeProjectUseCase {
 
 		// 1. Check if project is already initialized
 		if (!force && (await this.configRepository.exists(workspaceRoot))) {
-			throw new ManifestInitializationException('Project is already initialized. Use force=true to overwrite.');
+			throw new ManifestInitializationException(
+				'Project is already initialized. Use force=true to overwrite.',
+			);
 		}
 
 		let detectedAgents;

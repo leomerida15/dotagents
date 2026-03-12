@@ -39,7 +39,7 @@ const OUT_PATH = join(
 
 /**
  * Derives the workspace marker directory from the provided paths or source root.
- * 
+ *
  * @param paths The list of path entries associated with the agent
  * @param sourceRoot The default source root directory
  * @returns The resolved workspace marker path
@@ -59,14 +59,16 @@ function deriveWorkspaceMarker(paths: PathEntry[] | undefined, sourceRoot: strin
 
 /**
  * Derives the configuration file path from the provided paths or source root.
- * 
+ *
  * @param paths The list of path entries associated with the agent
  * @param sourceRoot The default source root directory
  * @returns The resolved configuration file path
  */
 function deriveConfigPath(paths: PathEntry[] | undefined, sourceRoot: string): string {
 	if (paths != null && paths.length > 0) {
-		const homeConfig = paths.find((pathEntry) => pathEntry.scope === 'home' && pathEntry.purpose === 'config');
+		const homeConfig = paths.find(
+			(pathEntry) => pathEntry.scope === 'home' && pathEntry.purpose === 'config',
+		);
 		if (homeConfig) return homeConfig.path;
 	}
 	return sourceRoot.replace(/\/$/, '');
@@ -74,7 +76,7 @@ function deriveConfigPath(paths: PathEntry[] | undefined, sourceRoot: string): s
 
 /**
  * Converts a PathEntry object into a stringified object literal.
- * 
+ *
  * @param pathEntry The path entry object to stringify
  * @returns The stringified representation of the path entry
  */
@@ -90,7 +92,7 @@ function pathEntryToLiteral(pathEntry: PathEntry): string {
 
 /**
  * Converts a known agent object into a stringified object literal.
- * 
+ *
  * @param agent The agent object containing id, configPath, workspaceMarker, and paths
  * @returns The stringified representation of the known agent
  */
@@ -115,7 +117,7 @@ ${pathsLiteral ? `    ${pathsLiteral},\n` : ''}  }`;
  * Main execution function.
  * Reads rule YAML files from the workspace root and generates a TypeScript
  * file containing the list of known agents and their configurations.
- * 
+ *
  * @returns A promise that resolves when the generation is complete
  */
 async function main(): Promise<void> {
@@ -169,9 +171,13 @@ async function main(): Promise<void> {
 		const sourceRootFromPaths =
 			paths != null && paths.length > 0
 				? (() => {
-						const workspacePaths = paths.filter((pathEntry) => pathEntry.scope === 'workspace');
+						const workspacePaths = paths.filter(
+							(pathEntry) => pathEntry.scope === 'workspace',
+						);
 						const markerOrSync = workspacePaths.find(
-							(pathEntry) => pathEntry.purpose === 'marker' || pathEntry.purpose === 'sync_source',
+							(pathEntry) =>
+								pathEntry.purpose === 'marker' ||
+								pathEntry.purpose === 'sync_source',
 						);
 						return (markerOrSync ?? workspacePaths[0])?.path;
 					})()

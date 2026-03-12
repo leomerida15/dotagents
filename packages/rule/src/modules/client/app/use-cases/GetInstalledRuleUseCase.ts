@@ -2,7 +2,7 @@ import { IInstalledRuleRepository } from '@rule/modules/client/app/ports/IInstal
 import { InstalledRule, AgentID, InstalledRuleDTO } from '@rule/modules/client';
 
 export class GetInstalledRuleUseCase {
-	constructor(private readonly repository: IInstalledRuleRepository) { }
+	constructor(private readonly repository: IInstalledRuleRepository) {}
 
 	async execute(agentId: string): Promise<InstalledRuleDTO | null> {
 		const id = new AgentID(agentId);

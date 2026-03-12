@@ -94,19 +94,27 @@ describe('MappingRule - validation', () => {
 	});
 
 	it('throws if from or to is empty', () => {
-		expect(() =>
-			MappingRule.create({ from: '', to: 'y' }),
-		).toThrow('Mapping source and target paths are required');
-		expect(() =>
-			MappingRule.create({ from: 'x', to: '' }),
-		).toThrow('Mapping source and target paths are required');
+		expect(() => MappingRule.create({ from: '', to: 'y' })).toThrow(
+			'Mapping source and target paths are required',
+		);
+		expect(() => MappingRule.create({ from: 'x', to: '' })).toThrow(
+			'Mapping source and target paths are required',
+		);
 	});
 });
 
 describe('MappingRule - equals', () => {
 	it('returns true for identical rules without format conversion', () => {
-		const a = MappingRule.create({ from: 'rules/', to: 'rules/', format: MappingFormat.DIRECTORY });
-		const b = MappingRule.create({ from: 'rules/', to: 'rules/', format: MappingFormat.DIRECTORY });
+		const a = MappingRule.create({
+			from: 'rules/',
+			to: 'rules/',
+			format: MappingFormat.DIRECTORY,
+		});
+		const b = MappingRule.create({
+			from: 'rules/',
+			to: 'rules/',
+			format: MappingFormat.DIRECTORY,
+		});
 		expect(a.equals(b)).toBe(true);
 	});
 

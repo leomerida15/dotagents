@@ -16,14 +16,17 @@ export class DefaultSyncInterpreter implements ISyncInterpreter {
 	 * @param rule The mapping rule to interpret.
 	 * @param options Should contain 'sourceRoot' and 'targetRoot' paths, manifest, and flags.
 	 */
-	async interpret(
-		rule: MappingRule,
-		options: SyncOptions,
-	): Promise<SyncAction[]> {
+	async interpret(rule: MappingRule, options: SyncOptions): Promise<SyncAction[]> {
 		const { sourceRoot, targetRoot, manifest, force, enableDelete, affectedPaths } = options;
 
 		if (affectedPaths && affectedPaths.length > 0) {
-			return this.interpretIncremental(rule, sourceRoot, targetRoot, affectedPaths, enableDelete ?? false);
+			return this.interpretIncremental(
+				rule,
+				sourceRoot,
+				targetRoot,
+				affectedPaths,
+				enableDelete ?? false,
+			);
 		}
 
 		if (!sourceRoot || !targetRoot) {
@@ -92,7 +95,9 @@ export class DefaultSyncInterpreter implements ISyncInterpreter {
 					const rel = relative(fullSource, file);
 					const rawTarget = join(fullTarget, rel);
 					const target = this.applyFormatConversion(file, rawTarget, rule);
-					actions.push(SyncAction.create({ type: ActionType.COPY, source: file, target }));
+					actions.push(
+						SyncAction.create({ type: ActionType.COPY, source: file, target }),
+					);
 				}
 			} else {
 				const target = this.applyFormatConversion(fullSource, fullTarget, rule);
@@ -118,7 +123,11 @@ export class DefaultSyncInterpreter implements ISyncInterpreter {
 		}
 	}
 
-	private applyFormatConversion(sourcePath: string, targetPath: string, rule: MappingRule): string {
+	private applyFormatConversion(
+		sourcePath: string,
+		targetPath: string,
+		rule: MappingRule,
+	): string {
 		const se = rule.sourceExt;
 		const te = rule.targetExt;
 		if (se == null || te == null) return targetPath;
@@ -149,7 +158,9 @@ export class DefaultSyncInterpreter implements ISyncInterpreter {
 		affectedPaths: string[],
 		enableDelete: boolean,
 	): Promise<SyncAction[]> {
-		const baseSource = normalize(isAbsolute(rule.from) ? rule.from : join(sourceRoot, rule.from));
+		const baseSource = normalize(
+			isAbsolute(rule.from) ? rule.from : join(sourceRoot, rule.from),
+		);
 		const baseTarget = normalize(isAbsolute(rule.to) ? rule.to : join(targetRoot, rule.to));
 		const actions: SyncAction[] = [];
 
@@ -162,11 +173,19 @@ export class DefaultSyncInterpreter implements ISyncInterpreter {
 
 			const sourceExists = await this.exists(absPath);
 			if (sourceExists) {
-				actions.push(SyncAction.create({ type: ActionType.COPY, source: absPath, target: targetPath }));
+				actions.push(
+					SyncAction.create({
+						type: ActionType.COPY,
+						source: absPath,
+						target: targetPath,
+					}),
+				);
 			} else if (enableDelete) {
 				const targetExists = await this.exists(targetPath);
 				if (targetExists) {
-					actions.push(SyncAction.create({ type: ActionType.DELETE, target: targetPath }));
+					actions.push(
+						SyncAction.create({ type: ActionType.DELETE, target: targetPath }),
+					);
 				}
 			}
 		}

@@ -39,7 +39,13 @@ describe('New project Sync E2E', { timeout: WAIT_TIMEOUT_MS + 5000 }, function (
 		const workspaceRoot = getWorkspaceRoot();
 		const statePath = path.join(workspaceRoot, '.agents', '.ai', 'state.json');
 		const rulesPath = path.join(workspaceRoot, '.agents', 'rules', `${E2E_AGENT_ID}.yaml`);
-		const legacyRulesPath = path.join(workspaceRoot, '.agents', '.ai', 'rules', `${E2E_AGENT_ID}.yaml`);
+		const legacyRulesPath = path.join(
+			workspaceRoot,
+			'.agents',
+			'.ai',
+			'rules',
+			`${E2E_AGENT_ID}.yaml`,
+		);
 
 		await vscode.commands.executeCommand('dotagents-vscode.sync');
 
@@ -47,9 +53,14 @@ describe('New project Sync E2E', { timeout: WAIT_TIMEOUT_MS + 5000 }, function (
 
 		assert.ok(fs.existsSync(rulesPath), `.agents/rules/${E2E_AGENT_ID}.yaml should exist`);
 		const legacyYamlFiles = fs.existsSync(path.dirname(legacyRulesPath))
-			? fs.readdirSync(path.dirname(legacyRulesPath)).filter((fileName) => fileName.endsWith('.yaml'))
+			? fs
+					.readdirSync(path.dirname(legacyRulesPath))
+					.filter((fileName) => fileName.endsWith('.yaml'))
 			: [];
-		assert.ok(!fs.existsSync(legacyRulesPath), `.agents/.ai/rules/${E2E_AGENT_ID}.yaml should not exist after sync`);
+		assert.ok(
+			!fs.existsSync(legacyRulesPath),
+			`.agents/.ai/rules/${E2E_AGENT_ID}.yaml should not exist after sync`,
+		);
 		assert.strictEqual(
 			legacyYamlFiles.length,
 			0,

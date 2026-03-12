@@ -3,7 +3,7 @@ import { IInstalledRuleRepository } from '@rule/modules/client/app/ports/IInstal
 import { InstalledRuleDTO } from '@rule/modules/client/app/dtos/InstalledRuleDTO';
 
 export class ListInstalledRulesUseCase {
-	constructor(private readonly repository: IInstalledRuleRepository) { }
+	constructor(private readonly repository: IInstalledRuleRepository) {}
 
 	async execute(): Promise<InstalledRuleDTO[]> {
 		const rules = await this.repository.getAllRules();

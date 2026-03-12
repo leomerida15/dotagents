@@ -48,7 +48,10 @@ describe('Sync bidireccional E2E', { timeout: 90_000 }, function () {
 		if (!fs.existsSync(statePath)) {
 			await waitForFile(statePath);
 		}
-		assert.ok(fs.existsSync(statePath), 'Workspace must be initialized (run newProjectSync test first or run full suite)');
+		assert.ok(
+			fs.existsSync(statePath),
+			'Workspace must be initialized (run newProjectSync test first or run full suite)',
+		);
 	});
 
 	it('inbound: change in IDE source appears in .agents', async function () {
@@ -62,7 +65,10 @@ describe('Sync bidireccional E2E', { timeout: 90_000 }, function () {
 
 		await sleep(DEBOUNCE_MS);
 
-		assert.ok(fs.existsSync(expectedTarget), `.agents/rules/e2e-inbound.md should exist after inbound sync`);
+		assert.ok(
+			fs.existsSync(expectedTarget),
+			`.agents/rules/e2e-inbound.md should exist after inbound sync`,
+		);
 		assert.strictEqual(
 			fs.readFileSync(expectedTarget, 'utf-8'),
 			content,
@@ -81,7 +87,10 @@ describe('Sync bidireccional E2E', { timeout: 90_000 }, function () {
 
 		await sleep(DEBOUNCE_MS);
 
-		assert.ok(fs.existsSync(expectedTarget), `.cursor/rules/e2e-outbound.mdc should exist after outbound sync`);
+		assert.ok(
+			fs.existsSync(expectedTarget),
+			`.cursor/rules/e2e-outbound.mdc should exist after outbound sync`,
+		);
 		assert.strictEqual(
 			fs.readFileSync(expectedTarget, 'utf-8'),
 			content,

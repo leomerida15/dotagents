@@ -34,7 +34,12 @@ export class SynchronizeAgentUseCase implements ISynchronizeAgent {
 	 * Executes the synchronization logic for a given agent.
 	 * @param request The agent ID and workspace root via DTO.
 	 */
-	async execute({ agentId, workspaceRoot, force, enableDelete }: SynchronizeAgentRequestDTO): Promise<SyncResultDTO> {
+	async execute({
+		agentId,
+		workspaceRoot,
+		force,
+		enableDelete,
+	}: SynchronizeAgentRequestDTO): Promise<SyncResultDTO> {
 		const startedAt = Date.now();
 		const allActions: SyncAction[] = [];
 
@@ -73,8 +78,20 @@ export class SynchronizeAgentUseCase implements ISynchronizeAgent {
 			);
 			allActions.push(...outboundActions);
 
-			// 4. Update Sync Manifest (Heartbeat) as per standard
-			configuration.manifest.markAsSynced(agentId);
+			// 4. Update Sync Manifest based on whether there were changes or agent switch
+			const currentAgent = configuration.manifest.currentAgent;
+			const agentChanged = agentId !== currentAgent;
+
+			if (force || agentChanged) {
+				// Update bridge state (lastProcessedAt and currentAgent) when:
+				// - There were actual changes (force=true), OR
+				// - We switched to a different agent
+				configuration.manifest.updateBridgeState(agentId, force);
+			} else {
+				// Only update agent tracking timestamp when:
+				// - No changes AND same agent (just heartbeat/update tracking)
+				configuration.manifest.updateAgentTrackOnly(agentId);
+			}
 
 			// 5. Save updated configuration
 			await this.configRepository.save(configuration);
@@ -98,7 +115,11 @@ export class SynchronizeAgentUseCase implements ISynchronizeAgent {
 	): Promise<SyncAction[]> {
 		const executedActions: SyncAction[] = [];
 		for (const rule of rules) {
-			const actions = await this.interpreter.interpret(rule, { sourceRoot, targetRoot, ...options });
+			const actions = await this.interpreter.interpret(rule, {
+				sourceRoot,
+				targetRoot,
+				...options,
+			});
 			for (const action of actions) {
 				await action.execute(this.fileSystem);
 				executedActions.push(action);

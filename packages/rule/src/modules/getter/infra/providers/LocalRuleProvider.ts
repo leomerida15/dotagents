@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { readFile, access } from 'node:fs/promises';
 
 export class LocalRuleProvider implements IRuleProvider {
-	constructor(private readonly basePath: string) { }
+	constructor(private readonly basePath: string) {}
 
 	async getRule(agentId: AgentID): Promise<AgentRule | null> {
 		// e.g. .agent-rules/cursor.yaml

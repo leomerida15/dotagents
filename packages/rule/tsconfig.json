@@ -3,15 +3,9 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"paths": {
-			"@rule": [
-				"./src/index.ts"
-			],
-			"@rule/*": [
-				"./src/*"
-			]
+			"@rule": ["./src/index.ts"],
+			"@rule/*": ["./src/*"]
 		}
 	},
-	"include": [
-		"src"
-	]
+	"include": ["src"]
 }

@@ -30,9 +30,7 @@ export function getWorkspaceMarker(agent: KnownAgent): string {
 
 export function getConfigPath(agent: KnownAgent): string {
 	if (agent.paths != null && agent.paths.length > 0) {
-		const configPath = agent.paths.find(
-			(p) => p.scope === 'home' && p.purpose === 'config',
-		);
+		const configPath = agent.paths.find((p) => p.scope === 'home' && p.purpose === 'config');
 		if (configPath) return configPath.path;
 	}
 	return agent.configPath;
@@ -41,9 +39,7 @@ export function getConfigPath(agent: KnownAgent): string {
 export function getSyncSourcePaths(agent: KnownAgent): PathEntry[] {
 	if (agent.paths == null || agent.paths.length === 0) return [];
 	return agent.paths.filter(
-		(p) =>
-			p.scope === 'workspace' &&
-			(p.purpose === 'marker' || p.purpose === 'sync_source'),
+		(p) => p.scope === 'workspace' && (p.purpose === 'marker' || p.purpose === 'sync_source'),
 	);
 }
 

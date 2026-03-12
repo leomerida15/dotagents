@@ -2,7 +2,7 @@ import { IInstalledRuleRepository } from '@rule/modules/client/app/ports/IInstal
 import { AgentID, RuleExistenceDTO } from '@rule/modules/client';
 
 export class VerifyRulesExistenceUseCase {
-	constructor(private readonly repository: IInstalledRuleRepository) { }
+	constructor(private readonly repository: IInstalledRuleRepository) {}
 
 	async execute(agentIds: string[]): Promise<RuleExistenceDTO[]> {
 		return agentIds.map((agentId) => {

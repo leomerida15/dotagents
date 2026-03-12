@@ -1,32 +1,32 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { Configuration, Agent, SyncManifest } from "@dotagents/diff";
-import { getVscodeMock, createFileSystemWatcherMock } from "./helpers/vscode-mock";
+import { describe, it, expect, mock, beforeEach } from 'bun:test';
+import { Configuration, Agent, SyncManifest } from '@dotagents/diff';
+import { getVscodeMock, createFileSystemWatcherMock } from './helpers/vscode-mock';
 
-mock.module("vscode", getVscodeMock);
+mock.module('vscode', getVscodeMock);
 
-describe("IdeWatcherService", () => {
-	let IdeWatcherService: typeof import("../infra/IdeWatcherService").IdeWatcherService;
+describe('IdeWatcherService', () => {
+	let IdeWatcherService: typeof import('../infra/IdeWatcherService').IdeWatcherService;
 	let service: InstanceType<typeof IdeWatcherService>;
 	let config: Configuration;
 
 	beforeEach(async () => {
-		const module = await import("../infra/IdeWatcherService");
+		const module = await import('../infra/IdeWatcherService');
 		IdeWatcherService = module.IdeWatcherService;
 		service = new IdeWatcherService();
 
 		const manifest = SyncManifest.create({
 			lastProcessedAt: 0,
-			lastActiveAgent: "none",
-			currentAgent: "cursor",
+			lastActiveAgent: 'none',
+			currentAgent: 'cursor',
 			agents: {},
 		});
 		config = Configuration.create({
-			workspaceRoot: "/mock/workspace",
+			workspaceRoot: '/mock/workspace',
 			agents: [
 				Agent.create({
-					id: "cursor",
-					name: "Cursor",
-					sourceRoot: ".cursor",
+					id: 'cursor',
+					name: 'Cursor',
+					sourceRoot: '.cursor',
 					inbound: [],
 					outbound: [],
 				}),
@@ -37,43 +37,43 @@ describe("IdeWatcherService", () => {
 		createFileSystemWatcherMock.mockClear();
 	});
 
-	it("should create watcher with correct pattern when register is called", () => {
-		service.register("/mock/workspace", "cursor", config);
+	it('should create watcher with correct pattern when register is called', () => {
+		service.register('/mock/workspace', 'cursor', config);
 
 		expect(createFileSystemWatcherMock).toHaveBeenCalledTimes(1);
 		const [pattern] = createFileSystemWatcherMock.mock.calls[0]!;
-		expect(pattern.base).toEqual({ uri: { fsPath: "/mock/workspace" } });
-		expect(pattern.pattern).toBe(".cursor/**");
+		expect(pattern.base).toEqual({ uri: { fsPath: '/mock/workspace' } });
+		expect(pattern.pattern).toBe('.cursor/**');
 	});
 
-	it("should dispose previous watchers when register is called again", () => {
-		service.register("/mock/workspace", "cursor", config);
+	it('should dispose previous watchers when register is called again', () => {
+		service.register('/mock/workspace', 'cursor', config);
 		const firstWatcher = createFileSystemWatcherMock.mock.results[0]!.value;
-		service.register("/mock/workspace", "cursor", config);
+		service.register('/mock/workspace', 'cursor', config);
 
 		expect(firstWatcher.dispose).toHaveBeenCalled();
 	});
 
-	it("should not create watcher when agent is not found in config", () => {
-		service.register("/mock/workspace", "nonexistent", config);
+	it('should not create watcher when agent is not found in config', () => {
+		service.register('/mock/workspace', 'nonexistent', config);
 
 		expect(createFileSystemWatcherMock).not.toHaveBeenCalled();
 	});
 
-	it("should not create watcher when sourceRoot is absolute path", () => {
+	it('should not create watcher when sourceRoot is absolute path', () => {
 		const manifest = SyncManifest.create({
 			lastProcessedAt: 0,
-			lastActiveAgent: "none",
-			currentAgent: "cline",
+			lastActiveAgent: 'none',
+			currentAgent: 'cline',
 			agents: {},
 		});
 		const configWithAbs = Configuration.create({
-			workspaceRoot: "/mock/workspace",
+			workspaceRoot: '/mock/workspace',
 			agents: [
 				Agent.create({
-					id: "cline",
-					name: "Cline",
-					sourceRoot: "/home/user/.cline",
+					id: 'cline',
+					name: 'Cline',
+					sourceRoot: '/home/user/.cline',
 					inbound: [],
 					outbound: [],
 				}),
@@ -81,13 +81,13 @@ describe("IdeWatcherService", () => {
 			manifest,
 		});
 
-		service.register("/mock/workspace", "cline", configWithAbs);
+		service.register('/mock/workspace', 'cline', configWithAbs);
 
 		expect(createFileSystemWatcherMock).not.toHaveBeenCalled();
 	});
 
-	it("should dispose all watchers when dispose is called", () => {
-		service.register("/mock/workspace", "cursor", config);
+	it('should dispose all watchers when dispose is called', () => {
+		service.register('/mock/workspace', 'cursor', config);
 		const watcher = createFileSystemWatcherMock.mock.results[0]!.value;
 		service.dispose();
 

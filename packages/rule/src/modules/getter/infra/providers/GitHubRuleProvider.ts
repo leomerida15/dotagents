@@ -6,7 +6,7 @@ import { YamlMapper } from '../../../../utils/infra/mappers/YamlMapper';
 import * as yaml from 'js-yaml';
 
 export class GitHubRuleProvider implements IRuleProvider {
-	constructor(private readonly repoBaseUrl: string) { }
+	constructor(private readonly repoBaseUrl: string) {}
 
 	async getRule(agentId: AgentID): Promise<AgentRule | null> {
 		// Construct raw URL: https://raw.githubusercontent.com/user/repo/main/rules/{agentId}.yaml

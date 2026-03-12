@@ -1,21 +1,25 @@
 export interface AgentInfo {
-    id: string;
-    name: string;
-    folder?: string;
+	id: string;
+	name: string;
+	folder?: string;
 }
 
 export interface AgentBridgeStateProps {
-    activeAgents: AgentInfo[];
-    availableAgents: AgentInfo[];
+	activeAgents: AgentInfo[];
+	availableAgents: AgentInfo[];
 }
 
 export class AgentBridgeState {
-    private props: AgentBridgeStateProps;
+	private props: AgentBridgeStateProps;
 
-    constructor(props: AgentBridgeStateProps) {
-        this.props = props;
-    }
+	constructor(props: AgentBridgeStateProps) {
+		this.props = props;
+	}
 
-    get activeAgents() { return this.props.activeAgents; }
-    get availableAgents() { return this.props.availableAgents; }
+	get activeAgents() {
+		return this.props.activeAgents;
+	}
+	get availableAgents() {
+		return this.props.availableAgents;
+	}
 }

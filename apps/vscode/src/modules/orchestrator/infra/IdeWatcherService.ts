@@ -49,7 +49,9 @@ export class IdeWatcherService implements vscode.Disposable {
 			if (rawPath.startsWith('/') || rawPath.startsWith('~')) continue;
 
 			const pattern = p.type === 'file' ? rawPath : `${rawPath}/**`;
-			const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(base, pattern));
+			const watcher = vscode.workspace.createFileSystemWatcher(
+				new vscode.RelativePattern(base, pattern),
+			);
 			this.disposables.push(watcher.onDidCreate(this.onCreate ?? noop));
 			this.disposables.push(watcher.onDidChange(this.onChange ?? noop));
 			this.disposables.push(watcher.onDidDelete(this.onDelete ?? noop));

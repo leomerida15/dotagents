@@ -17,6 +17,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # generated/runtime files that should not be committed
 .agents/.ai/extension-debug.log
+.agents/.ai/state.json
 
 # dotenv environment variable files
 .env

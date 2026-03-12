@@ -115,7 +115,12 @@ describe('YamlMapper', () => {
 				id: 'custom-agent',
 				name: 'Custom',
 				paths: [
-					{ path: '.agent/', scope: 'workspace', type: 'directory', purpose: 'sync_source' },
+					{
+						path: '.agent/',
+						scope: 'workspace',
+						type: 'directory',
+						purpose: 'sync_source',
+					},
 				],
 			},
 			mapping: { inbound: [], outbound: [] },

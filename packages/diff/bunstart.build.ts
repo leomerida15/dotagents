@@ -1,4 +1,4 @@
-import bunPluginDts from 'bun-plugin-dts'
+import bunPluginDts from 'bun-plugin-dts';
 
 /**
  * Build script: compiles TypeScript and emits declaration files.
@@ -24,7 +24,7 @@ export async function build(): Promise<void> {
 				output: {
 					noBanner: true,
 				},
-			})
+			}),
 		],
 	});
 

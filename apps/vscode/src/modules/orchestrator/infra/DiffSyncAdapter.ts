@@ -105,7 +105,8 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 			detectAgentFromHostApp();
 		try {
 			const config = await this.configRepository.load(workspaceRoot);
-			config.manifest.markAsSynced(agentToSet);
+			// For syncAll, we always update bridge state since this is a full sync operation
+			config.manifest.updateBridgeState(agentToSet, true);
 			await this.configRepository.save(config);
 			if (this.logger)
 				this.logger.info(
@@ -140,6 +141,7 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		const rule = rules.find((item) => item.id === agentId);
 
 		let writtenPaths: string[] = [];
+		let hadChanges = false;
 		if (rule) {
 			const result = await this.syncProject.execute({
 				rules: rule.mappings.inbound as unknown as MappingRuleDTO[],
@@ -148,11 +150,24 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 				...(affectedPaths && affectedPaths.length > 0 ? { affectedPaths } : {}),
 			});
 			writtenPaths = this.extractWrittenPaths(result);
+			hadChanges = result.actionsPerformed.length > 0;
 		}
 
 		try {
 			const config = await this.configRepository.load(workspaceRoot);
-			config.manifest.markAsSynced(agentId);
+			const currentAgent = config.manifest.currentAgent;
+			const agentChanged = agentId !== currentAgent;
+
+			if (hadChanges || agentChanged) {
+				// Update bridge state (lastProcessedAt and currentAgent) when:
+				// - There were actual changes (hadChanges), OR
+				// - We switched to a different agent
+				config.manifest.updateBridgeState(agentId, hadChanges);
+			} else {
+				// Only update agent tracking timestamp when:
+				// - No changes AND same agent (just heartbeat/update tracking)
+				config.manifest.updateAgentTrackOnly(agentId);
+			}
 			await this.configRepository.save(config);
 			if (this.logger)
 				this.logger.info(
@@ -188,39 +203,47 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		const rule = rules.find((item) => item.id === agentId);
 
 		let writtenPaths: string[] = [];
-		if (rule && rule.mappings.outbound?.length) {
+		let hadChanges = false;
+		if (rule) {
 			const result = await this.syncProject.execute({
-				rules: rule.mappings.outbound as unknown as MappingRuleDTO[],
-				sourcePath: join(workspaceRoot, '.agents'),
-				targetPath: join(workspaceRoot, rule.sourceRoot),
+				rules: rule.mappings.inbound as unknown as MappingRuleDTO[],
+				sourcePath: join(workspaceRoot, rule.sourceRoot),
+				targetPath: join(workspaceRoot, '.agents'),
 				...(affectedPaths && affectedPaths.length > 0 ? { affectedPaths } : {}),
 			});
 			writtenPaths = this.extractWrittenPaths(result);
+			hadChanges = result.actionsPerformed.length > 0;
 		}
 
 		try {
 			const config = await this.configRepository.load(workspaceRoot);
-			config.manifest.markAsSynced(agentId);
+			const currentAgent = config.manifest.currentAgent;
+			const agentChanged = agentId !== currentAgent;
+
+			if (hadChanges || agentChanged) {
+				// Update bridge state (lastProcessedAt and currentAgent) when:
+				// - There were actual changes (hadChanges), OR
+				// - We switched to a different agent
+				config.manifest.updateBridgeState(agentId, hadChanges);
+			} else {
+				// Only update agent tracking timestamp when:
+				// - No changes AND same agent (just heartbeat/update tracking)
+				config.manifest.updateAgentTrackOnly(agentId);
+			}
 			await this.configRepository.save(config);
 			if (this.logger)
 				this.logger.info(
-					'[DiffSyncAdapter] syncOutboundAgent done',
+					'[DiffSyncAdapter] currentAgent set to',
 					agentId,
 					'workspaceRoot',
 					workspaceRoot,
 				);
 		} catch (e) {
 			if (this.logger)
-				this.logger.error(
-					'[DiffSyncAdapter] Failed to update manifest after syncOutboundAgent:',
-					e,
-				);
-			else
-				console.error(
-					'[DiffSyncAdapter] Failed to update manifest after syncOutboundAgent:',
-					e,
-				);
+				this.logger.error('[DiffSyncAdapter] Failed to update manifest currentAgent:', e);
+			else console.error('[DiffSyncAdapter] Failed to update manifest currentAgent:', e);
 		}
+
 		return { writtenPaths };
 	}
 

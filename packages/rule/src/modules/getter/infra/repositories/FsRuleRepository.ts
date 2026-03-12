@@ -5,7 +5,7 @@ import { join, dirname } from 'node:path';
 import * as yaml from 'js-yaml';
 
 export class FsRuleRepository implements IRuleRepository {
-	constructor(private readonly storagePath: string) { }
+	constructor(private readonly storagePath: string) {}
 
 	async save(rule: AgentRule): Promise<void> {
 		const filePath = join(this.storagePath, `${rule.id.toString()}.yaml`);

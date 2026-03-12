@@ -21,7 +21,11 @@ export class GitHubRuleProvider implements IRuleProvider {
 	private readonly rulesPath: string;
 	private readonly logger: ILogger | undefined;
 
-	constructor({ baseUrl = DEFAULT_BASE_URL, rulesPath = 'rules', logger }: GitHubRuleProviderProps = {}) {
+	constructor({
+		baseUrl = DEFAULT_BASE_URL,
+		rulesPath = 'rules',
+		logger,
+	}: GitHubRuleProviderProps = {}) {
 		this.baseUrl = baseUrl.replace(/\/$/, '');
 		this.rulesPath = rulesPath.replace(/^\/|\/$/g, '');
 		this.logger = logger;
@@ -41,7 +45,8 @@ export class GitHubRuleProvider implements IRuleProvider {
 			}
 			return await response.text();
 		} catch (error) {
-			if (this.logger) this.logger.warn(`Could not fetch rule for ${agentId} from ${url}:`, error);
+			if (this.logger)
+				this.logger.warn(`Could not fetch rule for ${agentId} from ${url}:`, error);
 			else console.warn(`Could not fetch rule for ${agentId} from ${url}:`, error);
 			return '';
 		}

@@ -13,7 +13,7 @@ export class GetAgentRuleUseCase {
 		private readonly githubProvider: IRuleProvider,
 		private readonly localProvider: IRuleProvider,
 		private readonly ruleRepository: IRuleRepository,
-	) { }
+	) {}
 
 	async execute(request: GetRuleRequestDTO): Promise<AgentRuleDTO> {
 		const agentId = new AgentID(request.agentId);

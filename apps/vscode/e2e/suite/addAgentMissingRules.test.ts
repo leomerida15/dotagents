@@ -121,7 +121,13 @@ describe('Add Agent & Missing Rules E2E', { timeout: 90_000 }, function () {
 		const agentId = 'e2e-agent';
 		const rulePath = writeLocalRule(workspaceRoot, agentId);
 		const canonicalRulePath = path.join(workspaceRoot, '.agents', 'rules', `${agentId}.yaml`);
-		const legacyRulePath = path.join(workspaceRoot, '.agents', '.ai', 'rules', `${agentId}.yaml`);
+		const legacyRulePath = path.join(
+			workspaceRoot,
+			'.agents',
+			'.ai',
+			'rules',
+			`${agentId}.yaml`,
+		);
 		fs.mkdirSync(path.join(workspaceRoot, '.e2e-agent', 'rules'), { recursive: true });
 
 		vscode.window.showQuickPick = (async (items: any, options: any) => {
@@ -172,7 +178,9 @@ describe('Add Agent & Missing Rules E2E', { timeout: 90_000 }, function () {
 		);
 		assert.ok(fs.existsSync(promptPath), 'make_rule_prompt.md should exist');
 		assert.ok(
-			openedDocs.some((p) => p.endsWith(path.join('.agents', '.ai', 'rules', 'make_rule_prompt.md'))),
+			openedDocs.some((p) =>
+				p.endsWith(path.join('.agents', '.ai', 'rules', 'make_rule_prompt.md')),
+			),
 			'make_rule_prompt.md should be opened',
 		);
 		assert.ok(
@@ -191,7 +199,8 @@ describe('Add Agent & Missing Rules E2E', { timeout: 90_000 }, function () {
 			assert.ok(
 				warningMessages.some(
 					(m) =>
-						m.includes('Some tools have no rules installed') && m.includes(E2E_AGENT_ID),
+						m.includes('Some tools have no rules installed') &&
+						m.includes(E2E_AGENT_ID),
 				),
 				'should warn that active agent has no installed rules',
 			);

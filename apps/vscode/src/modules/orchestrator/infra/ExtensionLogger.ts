@@ -22,7 +22,10 @@ export class ExtensionLogger implements ILogger {
 
 	private formatLine(level: string, message: string, ...args: unknown[]): string {
 		const timestamp = new Date().toISOString();
-		const rest = args.length ? ' ' + args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ') : '';
+		const rest = args.length
+			? ' ' +
+				args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')
+			: '';
 		return `${timestamp} [${level}] ${message}${rest}\n`;
 	}
 
@@ -33,7 +36,10 @@ export class ExtensionLogger implements ILogger {
 		if (!logToFile) return;
 
 		const workspaceRoot = this.getWorkspaceRoot();
-		const logFilePath = rootConfig.get<string>('dotagents.debug.logFilePath', '.agents/.ai/extension-debug.log');
+		const logFilePath = rootConfig.get<string>(
+			'dotagents.debug.logFilePath',
+			'.agents/.ai/extension-debug.log',
+		);
 		// When no workspace, write under process.cwd() so logs still appear somewhere
 		const baseDir = workspaceRoot || process.cwd();
 		const fullPath = join(baseDir, logFilePath);

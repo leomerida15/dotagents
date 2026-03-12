@@ -1,6 +1,6 @@
-import { mock } from "bun:test";
+import { mock } from 'bun:test';
 
-export const mockWorkspaceFolders = [{ uri: { fsPath: "/mock/root" } }];
+export const mockWorkspaceFolders = [{ uri: { fsPath: '/mock/root' } }];
 
 const watcherDisposeMock = mock(() => {});
 export const createFileSystemWatcherMock = mock(() => ({
@@ -21,9 +21,12 @@ export const getVscodeMock = () => ({
 		getWorkspaceFolder: getWorkspaceFolderMock,
 	},
 	window: { showErrorMessage: () => {} },
-	env: { appName: "Cursor" },
+	env: { appName: 'Cursor' },
 	Uri: { file: (p: string) => ({ fsPath: p }) },
 	RelativePattern: class {
-		constructor(public base: unknown, public pattern: string) {}
+		constructor(
+			public base: unknown,
+			public pattern: string,
+		) {}
 	},
 });

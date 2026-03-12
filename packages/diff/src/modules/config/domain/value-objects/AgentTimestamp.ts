@@ -3,7 +3,7 @@
  * Value Object - immutable entity in the domain layer.
  */
 export interface AgentTimestampProps {
-    lastProcessedAt: number;
+	lastProcessedAt: number;
 }
 
 /**
@@ -19,44 +19,44 @@ export interface AgentTimestampProps {
  * ```
  */
 export class AgentTimestamp {
-    private readonly _lastProcessedAt: number;
+	private readonly _lastProcessedAt: number;
 
-    private constructor({ lastProcessedAt }: AgentTimestampProps) {
-        this._lastProcessedAt = lastProcessedAt;
-    }
+	private constructor({ lastProcessedAt }: AgentTimestampProps) {
+		this._lastProcessedAt = lastProcessedAt;
+	}
 
-    /**
-     * Creates a new AgentTimestamp instance.
-     * @param props - The properties containing the timestamp
-     * @returns A new immutable AgentTimestamp instance
-     */
-    public static create(props: AgentTimestampProps): AgentTimestamp {
-        return new AgentTimestamp(props);
-    }
+	/**
+	 * Creates a new AgentTimestamp instance.
+	 * @param props - The properties containing the timestamp
+	 * @returns A new immutable AgentTimestamp instance
+	 */
+	public static create(props: AgentTimestampProps): AgentTimestamp {
+		return new AgentTimestamp(props);
+	}
 
-    /**
-     * Creates a new AgentTimestamp with the current time.
-     * @returns A new AgentTimestamp set to Date.now()
-     */
-    public static createNow(): AgentTimestamp {
-        return new AgentTimestamp({ lastProcessedAt: Date.now() });
-    }
+	/**
+	 * Creates a new AgentTimestamp with the current time.
+	 * @returns A new AgentTimestamp set to Date.now()
+	 */
+	public static createNow(): AgentTimestamp {
+		return new AgentTimestamp({ lastProcessedAt: Date.now() });
+	}
 
-    /**
-     * Gets the timestamp value.
-     * @returns The last processed timestamp in milliseconds
-     */
-    public get lastProcessedAt(): number {
-        return this._lastProcessedAt;
-    }
+	/**
+	 * Gets the timestamp value.
+	 * @returns The last processed timestamp in milliseconds
+	 */
+	public get lastProcessedAt(): number {
+		return this._lastProcessedAt;
+	}
 
-    /**
-     * Serializes the AgentTimestamp to JSON format.
-     * @returns Plain object representation
-     */
-    public toJSON(): AgentTimestampProps {
-        return {
-            lastProcessedAt: this._lastProcessedAt,
-        };
-    }
+	/**
+	 * Serializes the AgentTimestamp to JSON format.
+	 * @returns Plain object representation
+	 */
+	public toJSON(): AgentTimestampProps {
+		return {
+			lastProcessedAt: this._lastProcessedAt,
+		};
+	}
 }

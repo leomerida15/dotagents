@@ -1,4 +1,5 @@
 import { AgentTimestamp } from '../value-objects/AgentTimestamp';
+// Trivial change to trigger LSP update
 
 /**
  * Represents the synchronization state of the project.
@@ -122,6 +123,42 @@ export class SyncManifest {
 	}
 
 	/**
+	 * Updates only the tracking timestamp for a specific agent (when it was synced).
+	 * Also updates lastActiveAgentId to track the last synced agent.
+	 * Does not affect bridge state (lastProcessedAt, currentAgent).
+	 * @param agentId - The agent ID that was synced
+	 */
+	public updateAgentTrackOnly(agentId: string): void {
+		const now = Date.now();
+		const timestamp = { lastProcessedAt: now };
+		this.agentTimestamps[agentId] = AgentTimestamp.create(timestamp);
+		this.lastActiveAgentId = agentId; // Track last synced agent
+	}
+
+	/**
+	 * Updates the bridge state (lastProcessedAt and currentAgent).
+	 * Should only be called when:
+	 * 1. Switching to a different agent than current, OR
+	 * 2. There were actual changes during synchronization
+	 * @param agentId - The agent ID to set as current agent
+	 * @param force - Whether to force the update (e.g., when there were changes)
+	 */
+	public updateBridgeState(agentId: string, force: boolean = false): void {
+		// Update bridge state if forcing update or switching to different agent
+		if (force || agentId !== this.currentAgentId) {
+			const now = Date.now();
+			const timestamp = { lastProcessedAt: now };
+
+			this.lastProcessedAtValue = now;
+			this.lastActiveAgentId = agentId;
+			this.currentAgentId = agentId;
+
+			// Also update the specific agent's timestamp to match bridge
+			this.agentTimestamps[agentId] = AgentTimestamp.create(timestamp);
+		}
+	}
+
+	/**
 	 * Serializes the manifest to JSON format.
 	 * @returns Plain object representation suitable for persistence
 	 */
@@ -133,7 +170,7 @@ export class SyncManifest {
 			agents: Object.fromEntries(
 				Object.entries(this.agentTimestamps)
 					.filter(([key]) => key !== 'agents')
-					.map(([key, timestamp]) => [key, timestamp.toJSON()])
+					.map(([key, timestamp]) => [key, timestamp.toJSON()]),
 			),
 		};
 	}

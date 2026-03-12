@@ -8,8 +8,8 @@ import { spawnSync } from 'node:child_process';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(__dirname, 'dist');
 const result = spawnSync('bun', ['run', 'index.js'], {
-  cwd: distDir,
-  stdio: 'inherit',
-  shell: false
+	cwd: distDir,
+	stdio: 'inherit',
+	shell: false,
 });
 process.exit(result.status ?? 1);

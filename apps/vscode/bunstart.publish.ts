@@ -1,12 +1,12 @@
-import { build } from "./bunstart.build";
-import { resolve } from "path";
-import { mkdir } from "fs/promises";
+import { build } from './bunstart.build';
+import { resolve } from 'path';
+import { mkdir } from 'fs/promises';
 
-const extensionPackageJsonPath = resolve(process.cwd(), "package.json");
+const extensionPackageJsonPath = resolve(process.cwd(), 'package.json');
 
 /**
  * Changes the name field in the extension's package.json.
- * 
+ *
  * @param newName The new name to set in package.json
  */
 async function changePackageName(newName: string) {
@@ -35,11 +35,14 @@ if (isMain) {
 			await mkdir('archive', { recursive: true });
 
 			console.log('Packaging extension...');
-			const vsceProc = Bun.spawn(['bunx', '-b', '@vscode/vsce', 'package', '--no-dependencies', '--out', 'archive/'], {
-				cwd: process.cwd(),
-				stdout: 'inherit',
-				stderr: 'inherit',
-			});
+			const vsceProc = Bun.spawn(
+				['bunx', '-b', '@vscode/vsce', 'package', '--no-dependencies', '--out', 'archive/'],
+				{
+					cwd: process.cwd(),
+					stdout: 'inherit',
+					stderr: 'inherit',
+				},
+			);
 
 			const vsceExit = await vsceProc.exited;
 			if (vsceExit !== 0) {

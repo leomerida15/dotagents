@@ -61,8 +61,9 @@ export class PullOutboundUseCase implements IPullOutbound {
 			);
 			allActions.push(...outboundActions);
 
-			// 4. Mark agent as synced with the current state
-			configuration.manifest.markAsSynced(agentId);
+			// 4. Mark agent as synced - for pull outbound, we only update tracking since
+			// this is a one-way sync (bridge -> agent) and doesn't change bridge state
+			configuration.manifest.updateAgentTrackOnly(agentId);
 
 			// 5. Persist the updated state
 			await this.configRepository.save(configuration);

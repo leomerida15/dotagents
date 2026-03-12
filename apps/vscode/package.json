@@ -2,7 +2,7 @@
 	"name": "@dotagents/vscode",
 	"displayName": "dotAgents",
 	"description": "dotAgents is a IA settings synchronization extension for IDEs fork from vscode.",
-	"version": "0.2.0",
+	"version": "0.2.2",
 	"icon": "access/logo.png",
 	"publisher": "GobernAI",
 	"repository": {
