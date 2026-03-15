@@ -2,6 +2,8 @@
 
 You are an AI development agent. We are setting up a universal sync system called **DotAgents**.
 
+**Core Philosophy:** DotAgents is a **local-first** synchronization system. It connects your AI agent's **local configuration files** (stored within the project workspace or in your user's home directory) with a universal bridge (`.agents/`). This ensures your rules, skills, and settings follow you across different IDEs and tools without relying on cloud providers.
+
 **Language:** This prompt and your response (including the capability table and any text) must be in **English**. All comments inside the generated YAML file must also be in **English** (e.g. `# [rules] Persistent instructions`, not in another language).
 
 **Goal:** Produce a **YAML configuration file** (agent rule) that defines how to sync your tool’s rules, skills, commands, MCP config, and workflows with the universal bridge `.agents/`. The file is saved at `.agents/rules/<id>.yaml` (e.g. `cursor.yaml`, `opencode.yaml`).
@@ -52,22 +54,36 @@ These three categories are the most easily confused. Use this guide to classify 
 
 If the repo already has rules in `.agents/rules/` or `rules/` (e.g. `cursor.yaml`, `opencode.yaml`), use them as a reference for format and mappings.
 
-1. Identify your agent ID (e.g. `cursor`, `claude-code`, `antigravity`, `cline`) and name.
-2. Define UI fields under `ui` (icon, color, description).
-3. Identify your config paths: in the workspace (project folder or files) and, if any, in home (global config, relative to `$HOME`).
-4. Generate a YAML file using the schema with `paths` (see below). Each `paths` entry has:
-   - **path**: relative path (to workspace or to `$HOME` depending on `scope`).
-   - **scope**: `"workspace"` (project root) or `"home"` (relative to `$HOME`, no `~`).
-   - **type**: `"file"` or `"directory"`.
-   - **purpose**: `"marker"` (agent detection), `"sync_source"` (sync source/target), `"config"` (global config).
-5. Define `inbound` (from your tool to `.agents/`) and `outbound` (from `.agents/` to your tool). **Include only the categories your tool supports** from Step 1.
-6. If you use file extensions other than `.md` (e.g. `.mdc`), use `source_ext` and `target_ext` in the `directory` mapping for automatic conversion.
-7. If you need to extract specific data from JSON (e.g. config keys), use `extract` (JSONPath) and `format: json-transform` or `json-split`.
-8. If your agent stores rules in `.md` but the standard or another tool expects JSON, use content conversion: `format: md-json` (inbound) and `format: json-md` (outbound), with the standard schema `{ "content": "<markdown>", "description": "optional" }` (see `context/pkg/rule/doc/rule.md`).
-9. If your tool uses a **single instruction file** at root (`AGENTS.md`, `CLAUDE.md`, etc.), map it as a `file` with `format: "file"` to `.agents/rules/<id>-agent.md`.
-10. Map your tool’s **commands / slash commands** to `workflows/` in the bridge. The native command folder name may differ (e.g. Cursor uses `commands/`, Claude Code might use `tasks/`).
-11. If your tool supports **sub-agents** or **custom agent modes**, map them to `agents/` in the bridge.
-12. **MCP:** If your tool has MCP config, always map it to the bridge’s **single list**: `mcp/mcp.json`. Inbound: from your native file (e.g. `mcp.json`, or `$.mcp` in a JSON) to `mcp/mcp.json`. Outbound: from `mcp/mcp.json` to your native format. **Do not** create per-agent files (`mcp/cursor-mcp.json`, etc.).
+### Rule Parameter Catalog
+
+| Section | Parameter | Type | Description |
+|---|---|---|---|
+| **agent** | `id` | string | Unique agent identifier (e.g. `cursor`, `antigravity`). |
+| | `name` | string | Human-readable name. |
+| **ui** | `icon` | string | VSCode Codicon ID or emoji. |
+| | `color` | hex | Primary brand color (e.g. `#2E88FF`). |
+| | `description` | string | Short summary for UI. |
+| **paths** | `path` | string | Path to the config folder/file. |
+| | `scope` | enum | **`workspace`** (local project root) or **`home`** (user's global config). |
+| | `type` | enum | `directory` or `file`. |
+| | `purpose` | enum | `marker` (detection), `config` (sync root), `sync_source` (primary data source). |
+| **mapping** | `from` | string | Source path relative to the agent's config path. |
+| | `to` | string | Target path relative to `.agents/`. |
+| | `format` | enum | `directory`, `file`, `markdown`, `json`, `json-transform`, `json-split`, `json-merge`, `md-json`, `json-md`. |
+| | `source_ext` | string | Extension in source (e.g. `.mdc`). |
+| | `target_ext` | string | Extension in target (e.g. `.md`). |
+| | `extract` | JSONPath | JSONPath to filter data (e.g. `$.mcpServers`). |
+| | `adapter` | string | Custom transformation adapter (e.g. `mcp-standard`, `agent-json`). |
+
+### Workflow
+
+1. Identify your agent ID and name.
+2. Define UI fields under `ui`.
+3. Identify your config paths: workspace (local folder) and home (global config).
+4. Generate a YAML file using the schema with `paths`.
+5. Define `inbound` (Agent → Bridge) and `outbound` (Bridge → Agent). **Include only the categories your tool supports** from Step 1.
+6. Use conversion parameters (`source_ext`, `format`, `extract`) to handle differences in file types or structures.
+
 
 ## Base schema with paths, extensions, and transformations
 
