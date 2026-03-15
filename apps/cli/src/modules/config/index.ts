@@ -23,12 +23,26 @@ export type { CliPreferences, CreateCliPreferencesProps } from './domain/cli-pre
 export type { IConfigRepository } from './domain/config-repository.port';
 export type { IPreferencesRepository } from './domain/preferences-repository.port';
 
-// Constants
-/** Default CLI preferences file path (~/.dotagents/preferences.json) */
-export const DEFAULT_PREFERENCES_PATH = (() => {
-	const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '.';
-	return `${homeDir}/.dotagents/preferences.json`;
-})();
+// Infrastructure
+export { YamlConfigRepository } from './infrastructure/yaml-config-repository';
+export { JsonPreferencesRepository } from './infrastructure/json-preferences-repository';
 
-/** Default project config filename */
-export const DEFAULT_CONFIG_FILENAME = 'config.yaml';
+// Use Cases
+export { loadProjectConfig } from './application/load-project-config.use-case';
+export type { LoadProjectConfigParams } from './application/load-project-config.use-case';
+
+export { saveProjectConfig } from './application/save-project-config.use-case';
+export type { SaveProjectConfigParams } from './application/save-project-config.use-case';
+
+export { getActiveAgent } from './application/get-active-agent.use-case';
+export type { GetActiveAgentParams } from './application/get-active-agent.use-case';
+
+// Constants
+export {
+	DEFAULT_PREFERENCES_PATH,
+	DEFAULT_CONFIG_FILENAME,
+	DEFAULT_CONFIG_PATH,
+} from './constants';
+
+// Factory
+export { createConfigModule } from './config.module';

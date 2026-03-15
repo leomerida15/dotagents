@@ -1,0 +1,31 @@
+{
+	"name": "@dotagents/monitor",
+	"module": "dist/index.js",
+	"type": "module",
+	"private": true,
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.0.4",
+		"@electric-sql/pglite": "^0.2.17",
+		"zod": "^3.23.8",
+		"globby": "^14.0.2"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"typescript": "^5"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"scripts": {
+		"build": "bun run -b bunstart.build.ts",
+		"watch": "bun run -b bunstart.watch.ts",
+		"dev": "bun run watch",
+		"start": "bun src/index.ts",
+		"test": "bun test",
+		"lint": "tsc --noEmit",
+		"format": "prettier --write ."
+	},
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"version": "0.0.1"
+}

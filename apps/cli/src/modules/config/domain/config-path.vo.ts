@@ -8,10 +8,10 @@ export type ConfigPath = string & { readonly __brand: unique symbol };
  * Factory function to create a validated ConfigPath.
  * @param path - The path string to validate
  * @returns A branded ConfigPath
- * @throws Error if path is empty
+ * @throws Error if path is empty or not a string
  */
 export function createConfigPath(path: string): ConfigPath {
-	if (!path || path.trim() === '') {
+	if (typeof path !== 'string' || path.trim() === '') {
 		throw new Error('Config path cannot be empty');
 	}
 	return path as ConfigPath;

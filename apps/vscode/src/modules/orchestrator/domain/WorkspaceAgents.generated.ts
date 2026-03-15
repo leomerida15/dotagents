@@ -3,11 +3,10 @@
 export const WORKSPACE_KNOWN_AGENTS = [
   {
     id: "antigravity",
-    configPath: ".gemini/antigravity",
+    configPath: ".agent",
     workspaceMarker: ".agent",
     paths: [
-      { path: ".agent/", scope: "workspace", type: "directory", purpose: "marker" },
-      { path: ".gemini/antigravity", scope: "home", type: "directory", purpose: "config" },
+      { path: ".agent/", scope: "workspace", type: "directory", purpose: "config" },
     ],
   },
   {

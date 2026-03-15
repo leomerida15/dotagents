@@ -7,14 +7,10 @@ agent:
     color: "#2E88FF"
     description: "AI-powered coding assistant by Google Deepmind"
 
-# Agent paths: workspace (detection/sync) and home (global config)
+# Agent paths: workspace (detection/sync)
 paths:
   - path: ".agent/"
     scope: "workspace"
-    type: "directory"
-    purpose: "marker"
-  - path: ".gemini/antigravity"
-    scope: "home"
     type: "directory"
     purpose: "config"
 
