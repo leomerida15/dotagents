@@ -7,7 +7,8 @@
 #   PROVIDER="claude"
 #   PROVIDER="gemini"
 #   PROVIDER="codex"
-#   PROVIDER="opencode"
+PROVIDER="opencode:opencode/mimo-v2-flash-free"
+
 #   PROVIDER="opencode:anthropic/claude-opus-4-5"
 #   PROVIDER="ollama:llama3.2"
 #   PROVIDER="ollama:codellama"
@@ -15,11 +16,11 @@
 #   PROVIDER="lmstudio:qwen2.5-coder-7b-instruct"
 #   PROVIDER="github:gpt-4o"
 #   PROVIDER="github:deepseek-r1"
-PROVIDER="opencode"
+# PROVIDER="opencode"
 FILE_PATTERNS="*.ts,*.tsx,*.js,*.jsx,*.json"
-EXCLUDE_PATTERNS="*/*.log,**/*.log,.agents/.ai/extension-debug.log,*.test.ts,*.spec.ts,*.d.ts,dist/*,node_modules/*,bun.lockb,.agents/**,.opencode/*,.*/**"
+EXCLUDE_PATTERNS=".*/**,*/*.log,**/*.log,.agents/.ai/extension-debug.log,*.test.ts,*.spec.ts,*.d.ts,dist/*,node_modules/*,bun.lockb,.agents/**,.opencode/*,.*/**"
 RULES_FILE=".agents/rules/code.md"
-STRICT_MODE="true"
+STRICT_MODE="false"
 
 # Timeout in seconds for AI provider response
 # Default: 300 (5 minutes)
