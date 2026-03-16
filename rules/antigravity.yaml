@@ -12,7 +12,7 @@ paths:
   - path: ".agent/"
     scope: "workspace"
     type: "directory"
-    purpose: "config"
+    purpose: "marker"
 
 # ┌──────────────────────────────────────────────────────────────┐
 # │ Capacidades soportadas                                       │

@@ -6,7 +6,7 @@ export const WORKSPACE_KNOWN_AGENTS = [
     configPath: ".agent",
     workspaceMarker: ".agent",
     paths: [
-      { path: ".agent/", scope: "workspace", type: "directory", purpose: "config" },
+      { path: ".agent/", scope: "workspace", type: "directory", purpose: "marker" },
     ],
   },
   {
@@ -20,11 +20,10 @@ export const WORKSPACE_KNOWN_AGENTS = [
   },
   {
     id: "opencode",
-    configPath: ".config/opencode",
+    configPath: ".opencode",
     workspaceMarker: ".opencode",
     paths: [
       { path: ".opencode/", scope: "workspace", type: "directory", purpose: "marker" },
-      { path: ".config/opencode", scope: "home", type: "directory", purpose: "config" },
     ],
   }
 ];

@@ -11,11 +11,11 @@ agent:
 # All locations where OpenCode stores configuration.
 # Used for agent detection and as sync root for directory mappings.
 paths:
-  # Primary workspace config directory
+  # Primary workspace config directory — detection marker
   - path: ".opencode/"
     scope: "workspace"
     type: "directory"
-    purpose: "config"
+    purpose: "marker"
 
 # ─── Capability Matrix ────────────────────────────────────────────────────────
 #  rules       ✅  .opencode/rules/ (.md)              → persistent instructions

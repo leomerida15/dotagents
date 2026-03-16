@@ -8,9 +8,11 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}/apps/vscode",
-        "${workspaceFolder}/../supabase-kit"
+        "${workspaceFolder}/../../jobs/GobernAI/gbai/"
       ],
-      "outFiles": ["${workspaceFolder}/apps/vscode/dist/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/apps/vscode/dist/**/*.js"
+      ],
       "env": {
         "DOTAGENTS_RULE_SOURCE": "LOCAL",
         "DOTAGENTS_LOCAL_PATH": "${workspaceFolder}/rules"
