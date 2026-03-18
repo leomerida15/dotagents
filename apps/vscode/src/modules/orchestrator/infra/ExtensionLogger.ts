@@ -30,17 +30,15 @@ export class ExtensionLogger implements ILogger {
 	}
 
 	private writeToFileIfEnabled(level: string, message: string, ...args: unknown[]): void {
-		// Read with full key; VSCode stores as "dotagents.debug.logToFile" in settings
+		// Always write to extension-debug.log in project root for debugging
+		// Can be disabled by setting dotagents.debug.logToFile to false
 		const rootConfig = vscode.workspace.getConfiguration();
-		const logToFile = rootConfig.get<boolean>('dotagents.debug.logToFile', false);
+		const logToFile = rootConfig.get<boolean>('dotagents.debug.logToFile', true); // Default: true for debugging
 		if (!logToFile) return;
 
 		const workspaceRoot = this.getWorkspaceRoot();
-		const logFilePath = rootConfig.get<string>(
-			'dotagents.debug.logFilePath',
-			'.agents/.ai/extension-debug.log',
-		);
-		// When no workspace, write under process.cwd() so logs still appear somewhere
+		// Always write to extension-debug.log in project root
+		const logFilePath = 'extension-debug.log';
 		const baseDir = workspaceRoot || process.cwd();
 		const fullPath = join(baseDir, logFilePath);
 

@@ -1,0 +1,6 @@
+{
+  "e2e-agent": {
+    "description": "E2E agent",
+    "prompt": "E2E inbound update"
+  }
+}

@@ -86,7 +86,7 @@ DOTAGENTS_E2E_AGENT=opencode DOTAGENTS_E2E_SYNC_DIRECTION=inbound bun test apps/
 This test verifies that the "Sync Now" command correctly copies skills from the `.agents/` directory to the opencode agent configuration:
 1. Sets `DOTAGENTS_E2E_AGENT=opencode` to target the opencode agent
 2. Executes `dotagents-vscode.sync` command (inbound sync: `.agents` → IDE/agent)
-3. Waits for `.agents/rules/opencode.yaml` to be created (sync completion signal)
+3. Waits for `.agents/.ai/rules/opencode.yaml` to be created (sync completion signal)
 4. Validates that `.agents/skills/` directory exists and contains skill files
 
 ## Project Structure

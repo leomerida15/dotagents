@@ -10,6 +10,7 @@ import type { FetchAndInstallRulesUseCase } from './FetchAndInstallRulesUseCase'
 import type { GetMissingRulesAgentIdsUseCase } from './GetMissingRulesAgentIdsUseCase';
 import type { MigrateExistingAgentsToBridgeUseCase } from './MigrateExistingAgentsToBridgeUseCase';
 import { detectAgentFromHostApp } from '../infra/AgentHostDetector';
+import { ensureWorkspaceSyncRootExists } from '../infra/ensureWorkspaceSyncRoot';
 
 /**
  * Input values required to run a sync orchestration.
@@ -226,6 +227,14 @@ export class StartSyncOrchestration {
 				this.statusBar.update(SyncStatus.SYNCED);
 				return { completed: true };
 			}
+
+			const configForSync = await this.configRepository.load(workspaceRoot);
+			const agentEntry = configForSync.agents.find((a) => a.id === selectedAgentId);
+			await ensureWorkspaceSyncRootExists(
+				workspaceRoot,
+				selectedAgentId,
+				agentEntry?.sourceRoot,
+			);
 
 			// 3. Perform Sync
 			const direction = options?.direction ?? 'inbound';

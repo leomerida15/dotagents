@@ -29,6 +29,14 @@
 			"type": "local",
 			"command": ["engram", "mcp"],
 			"enabled": true
+		},
+		"monitor": {
+			"type": "local",
+			"command": ["bun", "run", "packages/monitor/src/mcp-server.ts"],
+			"env": {
+				"MONITOR_PROJECT_ROOT": "."
+			},
+			"enabled": true
 		}
 	}
 }

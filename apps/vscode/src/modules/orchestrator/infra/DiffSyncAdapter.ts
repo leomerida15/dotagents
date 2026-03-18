@@ -13,7 +13,7 @@ import type { ILogger } from '../app/ports/ILogger';
 import { NodeFileSystem } from './NodeFileSystem';
 import { NodeConfigRepository } from './NodeConfigRepository';
 import { join } from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { ClientModule } from '@dotagents/rule';
 import { WORKSPACE_AGENT_MARKERS } from '../domain/WorkspaceAgents';
 import { detectAgentFromHostApp } from './AgentHostDetector';
@@ -87,12 +87,23 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		);
 		const rules = await listRules.execute();
 
-		// 2. Execute sync for each agent
+		// 2. Execute sync for each agent (skip if sourceRoot doesn't exist)
 		let lastSyncedAgentId: string | null = null;
 		for (const rule of rules) {
+			const agentSourcePath = join(workspaceRoot, rule.sourceRoot);
+			if (!existsSync(agentSourcePath)) {
+				if (this.logger)
+					this.logger.debug(
+						'[DiffSyncAdapter] Skipping inbound sync for',
+						rule.id,
+						'- sourceRoot does not exist:',
+						agentSourcePath,
+					);
+				continue;
+			}
 			await this.syncProject.execute({
 				rules: rule.mappings.inbound as unknown as MappingRuleDTO[],
-				sourcePath: join(workspaceRoot, rule.sourceRoot),
+				sourcePath: agentSourcePath,
 				targetPath: join(workspaceRoot, '.agents'),
 			});
 			lastSyncedAgentId = rule.id;
@@ -134,23 +145,106 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		agentId: string,
 		affectedPaths?: string[],
 	): Promise<{ writtenPaths: string[] }> {
-		const listRules = ClientModule.createListInstalledRulesUseCase(
-			join(workspaceRoot, '.agents', '.ai', 'rules'),
-		);
+		if (this.logger) {
+			this.logger.debug('[DiffSyncAdapter] === START SYNC INBOUND ===');
+			this.logger.debug('[DiffSyncAdapter] workspaceRoot:', workspaceRoot);
+			this.logger.debug('[DiffSyncAdapter] agentId:', agentId);
+			this.logger.debug('[DiffSyncAdapter] affectedPaths:', affectedPaths);
+		}
+
+		const rulesPath = join(workspaceRoot, '.agents', '.ai', 'rules');
+
+		if (this.logger) {
+			try {
+				const files = readdirSync(rulesPath);
+				this.logger.debug('[DiffSyncAdapter] DIRECTORY SCAN:', files.join(', '));
+			} catch (e) {
+				this.logger.debug('[DiffSyncAdapter] DIRECTORY SCAN FAILED:', String(e));
+			}
+		}
+
+		if (this.logger) {
+			this.logger.debug('[DiffSyncAdapter] Loading rules from:', rulesPath);
+		}
+
+		const listRules = ClientModule.createListInstalledRulesUseCase(rulesPath);
 		const rules = await listRules.execute();
+
+		if (this.logger) {
+			this.logger.debug('[DiffSyncAdapter] Rules loaded:', rules.length);
+			this.logger.debug(
+				'[DiffSyncAdapter] Available agents:',
+				rules.map((r) => r.id),
+			);
+			this.logger.debug('[DiffSyncAdapter] Rules path:', rulesPath);
+		}
+
 		const rule = rules.find((item) => item.id === agentId);
+
+		if (this.logger) {
+			if (rule) {
+				this.logger.debug('[DiffSyncAdapter] Rule found for agent:', agentId);
+				this.logger.debug('[DiffSyncAdapter] sourceRoot:', rule.sourceRoot);
+				this.logger.debug(
+					'[DiffSyncAdapter] inbound mappings:',
+					JSON.stringify(rule.mappings.inbound),
+				);
+			} else {
+				this.logger.debug('[DiffSyncAdapter] NO RULE FOUND for agent:', agentId);
+			}
+		}
 
 		let writtenPaths: string[] = [];
 		let hadChanges = false;
 		if (rule) {
-			const result = await this.syncProject.execute({
-				rules: rule.mappings.inbound as unknown as MappingRuleDTO[],
-				sourcePath: join(workspaceRoot, rule.sourceRoot),
-				targetPath: join(workspaceRoot, '.agents'),
-				...(affectedPaths && affectedPaths.length > 0 ? { affectedPaths } : {}),
-			});
-			writtenPaths = this.extractWrittenPaths(result);
-			hadChanges = result.actionsPerformed.length > 0;
+			const sourcePath = join(workspaceRoot, rule.sourceRoot);
+			if (!existsSync(sourcePath)) {
+				if (this.logger)
+					this.logger.debug(
+						'[DiffSyncAdapter] Skipping inbound sync - sourceRoot does not exist:',
+						sourcePath,
+					);
+			} else {
+				const syncRequest = {
+					rules: rule.mappings.inbound as unknown as MappingRuleDTO[],
+					sourcePath,
+					targetPath: join(workspaceRoot, '.agents'),
+					...(affectedPaths && affectedPaths.length > 0 ? { affectedPaths } : {}),
+				};
+
+				if (this.logger) {
+					this.logger.debug(
+						'[DiffSyncAdapter] Executing sync with request:',
+						JSON.stringify(syncRequest, null, 2),
+					);
+				}
+
+				const result = await this.syncProject.execute(syncRequest);
+
+				if (this.logger) {
+					this.logger.debug(
+						'[DiffSyncAdapter] Sync result - actions performed:',
+						result.actionsPerformed,
+					);
+				}
+				if (result.status === 'failure' && result.errors?.length && this.logger) {
+					this.logger.error('[DiffSyncAdapter] Sync failed:', result.errors.join('; '));
+				}
+
+				writtenPaths = this.extractWrittenPaths(result);
+				hadChanges = result.actionsPerformed.length > 0;
+
+				if (this.logger) {
+					this.logger.debug('[DiffSyncAdapter] Written paths:', writtenPaths);
+					this.logger.debug('[DiffSyncAdapter] Had changes:', hadChanges);
+					this.logger.debug('[DiffSyncAdapter] === END SYNC INBOUND ===');
+				}
+			}
+		} else {
+			if (this.logger) {
+				this.logger.debug('[DiffSyncAdapter] No rule found, skipping sync');
+				this.logger.debug('[DiffSyncAdapter] === END SYNC INBOUND (NO RULE) ===');
+			}
 		}
 
 		try {
@@ -196,23 +290,93 @@ export class DiffSyncAdapter implements IDiffSyncEngine, ISyncProject {
 		agentId: string,
 		affectedPaths?: string[],
 	): Promise<{ writtenPaths: string[] }> {
-		const listRules = ClientModule.createListInstalledRulesUseCase(
-			join(workspaceRoot, '.agents', '.ai', 'rules'),
-		);
+		if (this.logger) {
+			this.logger.debug('[DiffSyncAdapter] === START SYNC OUTBOUND ===');
+			this.logger.debug('[DiffSyncAdapter] workspaceRoot:', workspaceRoot);
+			this.logger.debug('[DiffSyncAdapter] agentId:', agentId);
+			this.logger.debug('[DiffSyncAdapter] affectedPaths:', affectedPaths);
+		}
+
+		const rulesPath = join(workspaceRoot, '.agents', '.ai', 'rules');
+		if (this.logger) {
+			this.logger.debug('[DiffSyncAdapter] Loading rules from:', rulesPath);
+		}
+
+		const listRules = ClientModule.createListInstalledRulesUseCase(rulesPath);
 		const rules = await listRules.execute();
+
+		if (this.logger) {
+			this.logger.debug('[DiffSyncAdapter] Rules loaded:', rules.length);
+			this.logger.debug(
+				'[DiffSyncAdapter] Available agents:',
+				rules.map((r) => r.id),
+			);
+			this.logger.debug('[DiffSyncAdapter] Rules path:', rulesPath);
+		}
+
 		const rule = rules.find((item) => item.id === agentId);
+
+		if (this.logger) {
+			if (rule) {
+				this.logger.debug('[DiffSyncAdapter] Rule found for agent:', agentId);
+				this.logger.debug('[DiffSyncAdapter] sourceRoot:', rule.sourceRoot);
+				this.logger.debug(
+					'[DiffSyncAdapter] outbound mappings:',
+					JSON.stringify(rule.mappings.outbound),
+				);
+			} else {
+				this.logger.debug('[DiffSyncAdapter] NO RULE FOUND for agent:', agentId);
+			}
+		}
 
 		let writtenPaths: string[] = [];
 		let hadChanges = false;
 		if (rule) {
-			const result = await this.syncProject.execute({
-				rules: rule.mappings.inbound as unknown as MappingRuleDTO[],
-				sourcePath: join(workspaceRoot, rule.sourceRoot),
-				targetPath: join(workspaceRoot, '.agents'),
-				...(affectedPaths && affectedPaths.length > 0 ? { affectedPaths } : {}),
-			});
-			writtenPaths = this.extractWrittenPaths(result);
-			hadChanges = result.actionsPerformed.length > 0;
+			const targetPath = join(workspaceRoot, rule.sourceRoot);
+			if (!existsSync(targetPath)) {
+				if (this.logger)
+					this.logger.debug(
+						'[DiffSyncAdapter] Skipping outbound sync - target sourceRoot does not exist:',
+						targetPath,
+					);
+			} else {
+				const syncRequest = {
+					rules: rule.mappings.outbound as unknown as MappingRuleDTO[],
+					sourcePath: join(workspaceRoot, '.agents'),
+					targetPath,
+					...(affectedPaths && affectedPaths.length > 0 ? { affectedPaths } : {}),
+				};
+
+				if (this.logger) {
+					this.logger.debug(
+						'[DiffSyncAdapter] Executing outbound sync with request:',
+						JSON.stringify(syncRequest, null, 2),
+					);
+				}
+
+				const result = await this.syncProject.execute(syncRequest);
+
+				if (this.logger) {
+					this.logger.debug(
+						'[DiffSyncAdapter] Sync result - actions performed:',
+						result.actionsPerformed,
+					);
+				}
+
+				writtenPaths = this.extractWrittenPaths(result);
+				hadChanges = result.actionsPerformed.length > 0;
+
+				if (this.logger) {
+					this.logger.debug('[DiffSyncAdapter] Written paths:', writtenPaths);
+					this.logger.debug('[DiffSyncAdapter] Had changes:', hadChanges);
+					this.logger.debug('[DiffSyncAdapter] === END SYNC OUTBOUND ===');
+				}
+			}
+		} else {
+			if (this.logger) {
+				this.logger.debug('[DiffSyncAdapter] No rule found, skipping outbound sync');
+				this.logger.debug('[DiffSyncAdapter] === END SYNC OUTBOUND (NO RULE) ===');
+			}
 		}
 
 		try {

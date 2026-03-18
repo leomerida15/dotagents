@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "e2e-mcp": {
+      "command": "echo",
+      "args": [
+        "from-agents"
+      ]
+    }
+  }
+}

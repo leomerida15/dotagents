@@ -47,7 +47,7 @@ Maneja la interacción con el usuario.
 4. Si hay otros agentes activos (Agente B), se dispara Outbound Sync `.agents` -> Agente B.
 
 ### C. Modo Skill (Auto-Configuración)
-1. Si se detecta un agente nuevo sin reglas en `.agents/rules/`.
+1. Si se detecta un agente nuevo sin reglas en `.agents/.ai/rules/` (YAML del motor).
 2. UI muestra notificación: "Nuevo agente detectado. ¿Quieres configurar sincronización?".
 3. `RulePromptUseCase` abre un Editor Virtual con el prompt generado.
 

@@ -12,6 +12,7 @@ import { NodeConfigRepository } from './modules/orchestrator/infra/NodeConfigRep
 import { NodeFileSystem } from './modules/orchestrator/infra/NodeFileSystem';
 import { GitHubRuleProvider } from './modules/orchestrator/infra/GitHubRuleProvider';
 import { FsAgentScanner } from './modules/orchestrator/infra/FsAgentScanner';
+import { ensureWorkspaceSyncRootExists } from './modules/orchestrator/infra/ensureWorkspaceSyncRoot';
 import { ExtensionLogger } from './modules/orchestrator/infra/ExtensionLogger';
 import { IdeWatcherService } from './modules/orchestrator/infra/IdeWatcherService';
 import { AgentsWatcherService } from './modules/orchestrator/infra/AgentsWatcherService';
@@ -289,14 +290,21 @@ class ExtensionApp {
 	 * Runs the initial synchronization and sets up file watchers for the workspace.
 	 */
 	private runInitialSyncAndSetupWatchers() {
+		console.log(`[Extension] runInitialSyncAndSetupWatchers called`);
 		const runInitialSync = async () => {
+			console.log(`[Extension] Running initial sync...`);
 			this.ideWatcher.dispose();
 			this.agentsWatcher.dispose();
 			const result = await this.startSync.execute();
-			if (!result.completed) return;
+			console.log(`[Extension] Initial sync result:`, result);
 			const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 			if (workspaceRoot) {
-				await ensureMakeRulePrompt(workspaceRoot, this.context);
+				if (result.completed) {
+					await ensureMakeRulePrompt(workspaceRoot, this.context);
+					console.log(`[Extension] Setting up watchers after successful sync`);
+				} else {
+					console.log(`[Extension] Initial sync not completed; setting up watchers anyway for reactive sync`);
+				}
 				await this.setupWatchers(workspaceRoot);
 				this.setupAgentsWatcher(workspaceRoot);
 			}
@@ -323,12 +331,23 @@ class ExtensionApp {
 		const paths = [...this.inboundAffectedPaths];
 		this.inboundAffectedPaths.clear();
 		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-		if (!workspaceRoot) return;
+		console.log(`[Extension] runReactiveInboundSync executing, paths:`, paths);
+		if (!workspaceRoot) {
+			console.log(`[Extension] No workspace root, aborting`);
+			return;
+		}
 		try {
-			if (!(await this.configRepo.exists(workspaceRoot))) return;
+			if (!(await this.configRepo.exists(workspaceRoot))) {
+				console.log(`[Extension] Config does not exist, aborting`);
+				return;
+			}
 			const config = await this.configRepo.load(workspaceRoot);
 			const activeAgentId = config.manifest.currentAgent ?? detectAgentFromHostApp();
-			if (!activeAgentId) return;
+			console.log(`[Extension] Active agent for inbound sync: ${activeAgentId}`);
+			if (!activeAgentId) {
+				console.log(`[Extension] No active agent, aborting`);
+				return;
+			}
 			const missingIds = await this.getMissingRulesAgentIds.execute(workspaceRoot, {
 				agentIds: [activeAgentId],
 			});
@@ -336,11 +355,17 @@ class ExtensionApp {
 				this.statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${activeAgentId}`);
 				return;
 			}
+			const useIncrementalPaths = paths.length > 0;
+			console.log(
+				`[Extension] Starting syncAgent for paths:`,
+				useIncrementalPaths ? paths : 'all',
+			);
 			const { writtenPaths } = await this.syncEngine.syncAgent(
 				workspaceRoot,
 				activeAgentId,
-				paths.length ? paths : undefined,
+				useIncrementalPaths ? paths : undefined,
 			);
+			console.log(`[Extension] syncAgent completed, written paths:`, writtenPaths);
 			this.ignoredPaths.add(writtenPaths);
 			this.outboundCooldownUntil = Date.now() + COOLDOWN_MS;
 		} catch (e) {
@@ -369,10 +394,11 @@ class ExtensionApp {
 				this.statusBar.update(SyncStatus.ERROR, `Reglas faltantes para ${activeAgentId}`);
 				return;
 			}
+			const useIncrementalPaths = paths.length > 0;
 			const { writtenPaths } = await this.syncEngine.syncOutboundAgent(
 				workspaceRoot,
 				activeAgentId,
-				paths.length ? paths : undefined,
+				useIncrementalPaths ? paths : undefined,
 			);
 			this.ignoredPaths.add(writtenPaths);
 			this.inboundCooldownUntil = Date.now() + COOLDOWN_MS;
@@ -387,9 +413,19 @@ class ExtensionApp {
 	 * @param uri The URI of the changed file
 	 */
 	private scheduleInboundSync(uri: vscode.Uri) {
-		if (this.ignoredPaths.shouldIgnore(uri.fsPath)) return;
-		if (Date.now() < this.inboundCooldownUntil) return;
+		console.log(`[Extension] scheduleInboundSync called for: ${uri.fsPath}`);
+		if (this.ignoredPaths.shouldIgnore(uri.fsPath)) {
+			console.log(`[Extension] Path ignored by IgnoredPathsRegistry: ${uri.fsPath}`);
+			return;
+		}
+		if (Date.now() < this.inboundCooldownUntil) {
+			console.log(`[Extension] Inbound sync in cooldown until: ${this.inboundCooldownUntil}`);
+			return;
+		}
 		this.inboundAffectedPaths.add(uri.fsPath);
+		console.log(
+			`[Extension] Added to inboundAffectedPaths, total: ${this.inboundAffectedPaths.size}`,
+		);
 		this.runReactiveInboundSync();
 	}
 
@@ -482,6 +518,12 @@ class ExtensionApp {
 		config.manifest.setCurrentAgent(agentId);
 		config.manifest.setLastActiveAgent(agentId);
 		await this.configRepo.save(config);
+
+		await ensureWorkspaceSyncRootExists(
+			workspaceRoot,
+			agentId,
+			config.agents.find((a) => a.id === agentId)?.sourceRoot,
+		);
 
 		const { writtenPaths } = await this.syncEngine.syncNew(workspaceRoot, agentId);
 		this.ignoredPaths.add(writtenPaths);
@@ -604,12 +646,19 @@ class ExtensionApp {
 			return null;
 		}
 
+		const getWorkspaceSourceRootForPicker = (agentId: string, sourceRoot: string): string => {
+			const known = WORKSPACE_KNOWN_AGENTS.find((a) => a.id === agentId);
+			if (!known) return sourceRoot;
+			// Prefer showing the workspace marker for known agents, even if config persisted an absolute path.
+			return getWorkspaceMarker(known);
+		};
+
 		type AgentQuickPickItem = vscode.QuickPickItem & { id: string };
 		const items: AgentQuickPickItem[] = agents.map((agent) => ({
 			id: agent.id,
 			label: agent.name || agent.id,
 			description: agent.id,
-			detail: agent.sourceRoot,
+			detail: `Sync: ${getWorkspaceSourceRootForPicker(agent.id, agent.sourceRoot)}/ (workspace)`,
 		}));
 
 		if (this.e2eAgentId) {
@@ -667,6 +716,11 @@ class ExtensionApp {
 	 */
 	private async selectActiveAgent(workspaceRoot: string) {
 		return this.selectActiveAgentBase(workspaceRoot, async (agentId, config) => {
+			await ensureWorkspaceSyncRootExists(
+				workspaceRoot,
+				agentId,
+				config.agents.find((a) => a.id === agentId)?.sourceRoot,
+			);
 			this.ideWatcher.dispose();
 			this.ideWatcher.register(workspaceRoot, agentId, config);
 			await this.fetchAndInstallRules.execute(workspaceRoot, { agentIds: [agentId] });
@@ -701,7 +755,11 @@ class ExtensionApp {
 			id: agent.id,
 			label: agent.name || agent.id,
 			description: agent.id,
-			detail: agent.sourceRoot,
+			detail: (() => {
+				const known = WORKSPACE_KNOWN_AGENTS.find((a) => a.id === agent.id);
+				const root = known ? getWorkspaceMarker(known) : agent.sourceRoot;
+				return `Sync: ${root}/ (workspace)`;
+			})(),
 		}));
 		const hostAgentId = detectAgentFromHostApp();
 		const defaultItem = items.find((item) => item.id === hostAgentId);
@@ -734,15 +792,25 @@ class ExtensionApp {
 	 * @param workspaceRoot - The root directory of the workspace
 	 */
 	private async setupWatchers(workspaceRoot: string): Promise<void> {
+		console.log(`[Extension] setupWatchers called for: ${workspaceRoot}`);
 		await this.notifyUnrecognizedIde(workspaceRoot);
 		const exists = await this.configRepo.exists(workspaceRoot);
-		if (!exists) return;
+		if (!exists) {
+			console.log(`[Extension] Config does not exist, skipping watcher setup`);
+			return;
+		}
 
 		const config = await this.configRepo.load(workspaceRoot);
 		const activeAgentId = config.manifest.currentAgent ?? detectAgentFromHostApp();
-		if (!activeAgentId) return;
+		console.log(`[Extension] setupWatchers - activeAgentId: ${activeAgentId}`);
+		if (!activeAgentId) {
+			console.log(`[Extension] No active agent, skipping watcher setup`);
+			return;
+		}
 
+		console.log(`[Extension] Registering IdeWatcher for: ${activeAgentId}`);
 		this.ideWatcher.register(workspaceRoot, activeAgentId, config);
+		console.log(`[Extension] IdeWatcher registered`);
 	}
 
 	/**
@@ -750,8 +818,10 @@ class ExtensionApp {
 	 * @param workspaceRoot - The root directory of the workspace
 	 */
 	private setupAgentsWatcher(workspaceRoot: string): void {
+		console.log(`[Extension] setupAgentsWatcher called for: ${workspaceRoot}`);
 		this.agentsWatcher.dispose();
 		this.agentsWatcher.register(workspaceRoot);
+		console.log(`[Extension] AgentsWatcher registered`);
 	}
 }
 

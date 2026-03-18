@@ -14,7 +14,8 @@
 	"scripts": {
 		"format": "bun -b prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
 		"lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-		"lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix"
+		"lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+		"test:monitor": "bun run test-monitor.ts"
 	},
 	"peerDependencies": {
 		"typescript": "^5"

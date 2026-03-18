@@ -5,6 +5,7 @@ import { AgentID, InstalledRule } from '../../domain';
 import { accessSync, readFileSync, readdirSync } from 'node:fs';
 import { YamlMapper } from 'src/utils/infra';
 import { RuleSourceType } from 'src/utils/domain';
+import { debugLog } from 'src/utils/debug';
 
 /**
  * Properties for configuring the FsInstalledRuleRepository.
@@ -55,6 +56,10 @@ export class FsInstalledRuleRepository implements IInstalledRuleRepository {
 		try {
 			accessSync(filePath);
 			const content = readFileSync(filePath, 'utf8');
+
+			debugLog(`[FsRepo] Reading file: ${filePath}`);
+			debugLog(`[FsRepo] Content length: ${content.length}`);
+
 			const parsed = yaml.load(content);
 
 			// YamlMapper returns ParsedRuleData, convert to InstalledRule
@@ -71,6 +76,7 @@ export class FsInstalledRuleRepository implements IInstalledRuleRepository {
 				outbound: ruleData.outbound,
 			});
 		} catch (error) {
+			debugLog(`[FsRepo] Error loading rule for ${agentId.toString()}: ${error}`);
 			return null;
 		}
 	}
@@ -84,6 +90,10 @@ export class FsInstalledRuleRepository implements IInstalledRuleRepository {
 			const files = readdirSync(this.basePath);
 			const yamlFiles = files.filter((fileName) => fileName.endsWith('.yaml'));
 
+			debugLog(`[FsRepo] basePath: ${this.basePath}`);
+			debugLog(`[FsRepo] files in directory: ${files.join(', ')}`);
+			debugLog(`[FsRepo] yaml files: ${yamlFiles.join(', ')}`);
+
 			const rules: InstalledRule[] = [];
 
 			for (const file of yamlFiles) {
@@ -91,17 +101,19 @@ export class FsInstalledRuleRepository implements IInstalledRuleRepository {
 				try {
 					const rule = this.getRule(new AgentID(agentId));
 					if (rule) {
+						debugLog(`[FsRepo] Loaded rule for: ${agentId}`);
 						rules.push(rule);
 					}
 				} catch (error) {
-					console.warn(`Skipping invalid agent ID in file: ${file}`, error);
+					debugLog(`[FsRepo] Skipping invalid agent ID in file: ${file} - ${error}`);
 				}
 			}
 
+			debugLog(`[FsRepo] Total rules loaded: ${rules.length}`);
 			return rules;
 		} catch (error) {
 			// Directory doesn't exist or can't be read
-			console.warn(`Could not read rules directory ${this.basePath}:`, error);
+			debugLog(`[FsRepo] Could not read rules directory ${this.basePath}: ${error}`);
 			return [];
 		}
 	}

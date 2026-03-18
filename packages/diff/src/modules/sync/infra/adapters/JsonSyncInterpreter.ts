@@ -74,30 +74,80 @@ export class JsonSyncInterpreter implements ISyncInterpreter {
 		);
 
 		// Adapter: Opencode MCP -> DotAgents Standard MCP (JSON)
-		// Transforms command array ["cmd", "arg"] to { command: "cmd", args: ["arg"] }
-		this.adapters.set('mcp-standard', async (data: any) => {
-			const mcpServers: Record<string, any> = {};
+		// Transforms:
+		// - inbound (opencode -> standard): { server: { command: ["cmd","arg"] } } -> { mcpServers: { server: { command:"cmd", args:["arg"] } } }
+		// - outbound (standard -> opencode): { mcpServers: { server: { command:"cmd", args:["arg"] } } } -> merges into target opencode.json under "mcp"
+		this.adapters.set(
+			'mcp-standard',
+			async (data: any, _rule: MappingRule, meta?: { targetPath?: string }) => {
+				const isStandard = Boolean(data && typeof data === 'object' && 'mcpServers' in data);
 
-			for (const [key, value] of Object.entries(data)) {
-				const config = value as any;
-				const serverConfig: Record<string, any> = {};
+				// Outbound: standard -> opencode (merge into target file when available).
+				if (isStandard) {
+					const servers = (data as any).mcpServers ?? {};
+					const opencodeMcp: Record<string, any> = {};
 
-				if (config.command && Array.isArray(config.command)) {
-					const [cmd, ...args] = config.command;
-					serverConfig.command = cmd;
-					serverConfig.args = args;
-				} else if (config.command) {
-					serverConfig.command = config.command;
+					for (const [key, value] of Object.entries(servers)) {
+						const config = value as any;
+						const serverConfig: Record<string, any> = {};
+
+						if (config.command && typeof config.command === 'string') {
+							const args = Array.isArray(config.args) ? config.args : [];
+							serverConfig.command = [config.command, ...args];
+						} else if (Array.isArray(config.command)) {
+							serverConfig.command = config.command;
+						}
+
+						if (config.env) serverConfig.env = config.env;
+						if (config.disabled === true) serverConfig.enabled = false;
+
+						opencodeMcp[key] = serverConfig;
+					}
+
+					if (meta?.targetPath) {
+						let existing: Record<string, any> = {};
+						try {
+							const raw = await readFile(meta.targetPath, 'utf-8');
+							existing = JSON.parse(raw);
+						} catch {
+							// target doesn't exist yet — start fresh
+						}
+
+						return {
+							...(existing['$schema']
+								? { $schema: existing['$schema'] }
+								: { $schema: 'https://opencode.ai/config.json' }),
+							...(existing['agent'] ? { agent: existing['agent'] } : {}),
+							mcp: opencodeMcp,
+						};
+					}
+
+					return { mcp: opencodeMcp };
 				}
 
-				if (config.env) serverConfig.env = config.env;
-				if (config.enabled === false) serverConfig.disabled = true;
+				// Inbound: opencode -> standard
+				const mcpServers: Record<string, any> = {};
+				for (const [key, value] of Object.entries(data ?? {})) {
+					const config = value as any;
+					const serverConfig: Record<string, any> = {};
 
-				mcpServers[key] = serverConfig;
-			}
+					if (config.command && Array.isArray(config.command)) {
+						const [cmd, ...args] = config.command;
+						serverConfig.command = cmd;
+						serverConfig.args = args;
+					} else if (config.command) {
+						serverConfig.command = config.command;
+					}
 
-			return { mcpServers };
-		});
+					if (config.env) serverConfig.env = config.env;
+					if (config.enabled === false) serverConfig.disabled = true;
+
+					mcpServers[key] = serverConfig;
+				}
+
+				return { mcpServers };
+			},
+		);
 
 		// Adapter: Opencode Agent -> DotAgents Agent Standard (JSON)
 		// Simply passes through the JSON object, allowing for future normalization
@@ -206,7 +256,7 @@ export class JsonSyncInterpreter implements ISyncInterpreter {
 				const adapter = this.adapters.get(rule.adapter);
 				if (adapter) {
 					// Adapter might return string or object
-					finalContent = await adapter(extractedData, rule);
+					finalContent = await adapter(extractedData, rule, { targetPath: fullTarget });
 				} else {
 					console.warn(`Adapter not found: ${rule.adapter}`);
 				}

@@ -1,0 +1,10 @@
+{
+  "e2e-mcp": {
+    "command": [
+      "echo",
+      "hello",
+      "inbound"
+    ],
+    "args": []
+  }
+}

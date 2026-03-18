@@ -61,14 +61,24 @@ describe('MappingRule - validation', () => {
 		).toThrow('sourceExt and targetExt must both be specified or both omitted');
 	});
 
-	it('throws if only targetExt is specified', () => {
+	it('allows only targetExt (e.g. for json-split output extension)', () => {
+		const rule = MappingRule.create({
+			from: 'opencode.json',
+			to: 'agents/',
+			targetExt: '.json',
+		});
+		expect(rule.targetExt).toBe('.json');
+		expect(rule.sourceExt).toBeUndefined();
+	});
+
+	it('throws if targetExt-only does not start with dot', () => {
 		expect(() =>
 			MappingRule.create({
-				from: 'rules/',
-				to: 'rules/',
-				targetExt: '.md',
+				from: 'x',
+				to: 'y',
+				targetExt: 'json',
 			}),
-		).toThrow('sourceExt and targetExt must both be specified or both omitted');
+		).toThrow('targetExt must start with a dot');
 	});
 
 	it('throws if sourceExt does not start with dot', () => {

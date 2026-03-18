@@ -4,7 +4,7 @@ You are an AI development agent. We are setting up a universal sync system calle
 
 **Language:** This prompt and your response (including the capability table and any text) must be in **English**. All comments inside the generated YAML file must also be in **English** (e.g. `# [rules] Persistent instructions`, not in another language).
 
-**Goal:** Produce a **YAML configuration file** (agent rule) that defines how to sync your tool’s rules, skills, commands, MCP config, and workflows with the universal bridge `.agents/`. The file is saved at `.agents/rules/<id>.yaml` (e.g. `cursor.yaml`, `opencode.yaml`).
+**Goal:** Produce a **YAML configuration file** (agent rule) that defines how to sync your tool’s rules, skills, commands, MCP config, and workflows with the universal bridge `.agents/`. Save this file at **`.agents/.ai/rules/<id>.yaml`** (e.g. `cursor.yaml`, `opencode.yaml`). Synced rule **documents** (e.g. `.md` from the IDE) live under `.agents/rules/`, not duplicate copies of this YAML.
 
 ## Step 1 — Declare which capabilities your tool supports
 
@@ -50,7 +50,7 @@ These three categories are the most easily confused. Use this guide to classify 
 
 ## Step 2 — Instructions for generating the YAML
 
-If the repo already has rules in `.agents/rules/` or `rules/` (e.g. `cursor.yaml`, `opencode.yaml`), use them as a reference for format and mappings.
+If the repo already has agent rule YAML in `.agents/.ai/rules/` (or legacy copies under `rules/`), use them as a reference for format and mappings.
 
 1. Identify your agent ID (e.g. `cursor`, `claude-code`, `antigravity`, `cline`) and name.
 2. Define UI fields under `ui` (icon, color, description).
@@ -351,7 +351,7 @@ Respond with **two sections**:
    List the Step 1 categories your tool supports, with native path and whether it creates rules (✅/❌/⚠️).
 
 2. **Full YAML block**  
-   The configuration file ready to save. The filename must be **`<id>.yaml`** under `.agents/rules/` (e.g. if `agent.id` is `cursor`, the file is `.agents/rules/cursor.yaml`). **All comments in the YAML must be in English.**
+   The configuration file ready to save. The filename must be **`<id>.yaml`** under **`.agents/.ai/rules/`** (e.g. if `agent.id` is `cursor`, the file is `.agents/.ai/rules/cursor.yaml`). **All comments in the YAML must be in English.**
 
 **Pre-submit checklist:**
 

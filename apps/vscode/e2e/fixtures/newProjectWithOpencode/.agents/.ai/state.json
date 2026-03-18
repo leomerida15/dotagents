@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "lastProcessedAt": 1773785108683,
+    "lastActiveAgent": "opencode",
+    "currentAgent": "opencode",
+    "agents": {
+      "opencode": {
+        "lastProcessedAt": 1773785108683
+      },
+      "cursor": {
+        "lastProcessedAt": 0
+      }
+    }
+  },
+  "agents": [
+    {
+      "id": "opencode",
+      "name": "opencode",
+      "sourceRoot": ".opencode",
+      "inbound": [],
+      "outbound": []
+    },
+    {
+      "id": "cursor",
+      "name": "cursor",
+      "sourceRoot": "/home/snor/.cursor",
+      "inbound": [],
+      "outbound": []
+    }
+  ]
+}

@@ -34,7 +34,7 @@ function readState(workspaceRoot: string): any {
 }
 
 function writeLocalRule(workspaceRoot: string, agentId: string): string {
-	const rulesDir = path.join(workspaceRoot, '.agents', 'rules');
+	const rulesDir = path.join(workspaceRoot, '.agents', '.ai', 'rules');
 	fs.mkdirSync(rulesDir, { recursive: true });
 	const rulePath = path.join(rulesDir, `${agentId}.yaml`);
 	const content = `version: "1.0"
@@ -120,14 +120,7 @@ describe('Add Agent & Missing Rules E2E', { timeout: 90_000 }, function () {
 	it('Add Agent with local rule adds agent and keeps rule in disk', async function () {
 		const agentId = 'e2e-agent';
 		const rulePath = writeLocalRule(workspaceRoot, agentId);
-		const canonicalRulePath = path.join(workspaceRoot, '.agents', 'rules', `${agentId}.yaml`);
-		const legacyRulePath = path.join(
-			workspaceRoot,
-			'.agents',
-			'.ai',
-			'rules',
-			`${agentId}.yaml`,
-		);
+		const bridgeCopyPath = path.join(workspaceRoot, '.agents', 'rules', `${agentId}.yaml`);
 		fs.mkdirSync(path.join(workspaceRoot, '.e2e-agent', 'rules'), { recursive: true });
 
 		vscode.window.showQuickPick = (async (items: any, options: any) => {
@@ -146,8 +139,7 @@ describe('Add Agent & Missing Rules E2E', { timeout: 90_000 }, function () {
 		await vscode.commands.executeCommand('dotagents-vscode.addAgent');
 
 		assert.ok(fs.existsSync(rulePath), `${rulePath} should exist`);
-		assert.ok(fs.existsSync(canonicalRulePath), `${canonicalRulePath} should exist`);
-		assert.ok(!fs.existsSync(legacyRulePath), `${legacyRulePath} should not exist`);
+		assert.ok(!fs.existsSync(bridgeCopyPath), `${bridgeCopyPath} should not exist`);
 		const state = readState(workspaceRoot);
 		assert.ok(
 			state.agents.some((a: any) => a.id === agentId),
@@ -190,7 +182,7 @@ describe('Add Agent & Missing Rules E2E', { timeout: 90_000 }, function () {
 	});
 
 	it('Sync with missing active rule warns about missing rules', async function () {
-		const rulePath = path.join(workspaceRoot, '.agents', 'rules', `${E2E_AGENT_ID}.yaml`);
+		const rulePath = path.join(workspaceRoot, '.agents', '.ai', 'rules', `${E2E_AGENT_ID}.yaml`);
 		const backupPath = `${rulePath}.bak`;
 		if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
 		fs.renameSync(rulePath, backupPath);

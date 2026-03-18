@@ -17,6 +17,8 @@ export class ListInstalledRulesUseCase {
 			format: m.format,
 			...(m.sourceExt != null && { sourceExt: m.sourceExt }),
 			...(m.targetExt != null && { targetExt: m.targetExt }),
+			...(m.extract != null && { extract: m.extract }),
+			...(m.adapter != null && { adapter: m.adapter }),
 		});
 		return {
 			id: rule.id.toString(),

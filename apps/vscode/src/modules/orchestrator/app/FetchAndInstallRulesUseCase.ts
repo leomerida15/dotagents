@@ -15,7 +15,9 @@ export interface FetchAndInstallRulesUseCaseProps {
 }
 
 /**
- * Fetches rules from GitHub for each detected agent and persists them to .agents/.ai/rules/.
+ * Fetches rules from GitHub for each detected agent and persists them only under
+ * `.agents/.ai/rules/` (rule engine). Bridge rule content (e.g. `.md` from the IDE) lives under
+ * `.agents/rules/` via sync, not as duplicate YAML copies here.
  */
 export class FetchAndInstallRulesUseCase {
 	private readonly ruleProvider: IRuleProvider;

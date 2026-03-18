@@ -1,0 +1,33 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "agent": {
+      "e2e-agent": {
+        "description": "E2E agent",
+        "prompt": "E2E inbound update"
+      }
+    },
+    "e2e-agent": {
+      "description": "E2E Agent",
+      "prompt": "E2E outbound update"
+    },
+    "mcp": {
+      "e2e-mcp": {
+        "command": [
+          "echo",
+          "hello",
+          "inbound"
+        ],
+        "args": []
+      }
+    }
+  },
+  "mcp": {
+    "e2e-mcp": {
+      "command": [
+        "echo",
+        "from-agents"
+      ]
+    }
+  }
+}

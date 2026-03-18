@@ -60,21 +60,25 @@ export class MappingRule {
 		if (!from) throw new Error("MappingRule 'from' cannot be empty");
 		if (!to) throw new Error("MappingRule 'to' cannot be empty");
 
-		// Format conversion: if one is specified, both must be present
+		// Extension conversion: if sourceExt is set, targetExt must be set.
+		// targetExt-only is allowed (e.g. json-split output extension).
 		const hasSource = sourceExt !== undefined && sourceExt !== '';
 		const hasTarget = targetExt !== undefined && targetExt !== '';
-		if (hasSource !== hasTarget) {
+		if (hasSource && !hasTarget) {
 			throw new Error(
 				'sourceExt and targetExt must both be specified or both omitted for format conversion',
 			);
 		}
-		if (hasSource) {
+		if (hasSource && hasTarget) {
 			if (!sourceExt!.startsWith('.')) {
 				throw new Error('sourceExt must start with a dot (e.g. .mdc)');
 			}
 			if (!targetExt!.startsWith('.')) {
 				throw new Error('targetExt must start with a dot (e.g. .md)');
 			}
+		}
+		if (hasTarget && !hasSource && targetExt && !targetExt.startsWith('.')) {
+			throw new Error('targetExt must start with a dot (e.g. .json)');
 		}
 
 		// Security check: prevent absolute paths or parent directory traversal

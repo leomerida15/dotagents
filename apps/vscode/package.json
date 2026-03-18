@@ -1,5 +1,6 @@
 {
 	"name": "@dotagents/vscode",
+	"type": "commonjs",
 	"displayName": "dotAgents",
 	"description": "dotAgents is a IA settings synchronization extension for IDEs fork from vscode.",
 	"version": "0.2.2",
@@ -60,7 +61,7 @@
 	"scripts": {
 		"prepublish": "bun run -b bunstart.publish.ts",
 		"build": "bun run -b bunstart.build.ts",
-		"watch": "bun build ./src/extension.ts --outdir ./dist --target node --external vscode --watch",
+		"watch": "bun build ./src/extension.ts --outdir ./dist --target node --format cjs --external vscode --watch",
 		"lint": "eslint src --ext ts",
 		"test": "node ./out/test/runTest.js",
 		"test:e2e": "bun run -b build && bun run -b e2e/runTest.ts"

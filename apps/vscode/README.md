@@ -43,9 +43,24 @@ You can tweak the extension behavior in your VSCode `settings.json`:
 - `dotagents.debug.logToFile`: Enable writing debug output to a file (default: `true`).
 - `dotagents.debug.logFilePath`: Path relative to the workspace root for the debug log (default: `../dotagents/.agents/.ai/extension-debug.log`).
 
+## Development (run extension in test environment)
+
+To run the extension in an Extension Development Host so that **DotAgents: Show Menu** and other commands work:
+
+1. **Open the extension folder as workspace**: File → Open Folder → select `apps/vscode` (not the monorepo root).
+2. **Build**: Run `bun run build` in the terminal (or use the "Run Extension" launch config, which builds automatically).
+3. **Launch**: Run and Debug (F5) → choose **"Run Extension"**. A new window opens with the extension loaded.
+4. In the new window, use the status bar item or Command Palette → "DotAgents: Show Menu".
+
+If you see **"command 'dotagents-vscode.showMenu' not found"**:
+
+- Ensure you opened the **`apps/vscode`** folder (so `dist/extension.js` is the one loaded).
+- Ensure the extension built: `bun run build` and that `dist/extension.js` exists.
+- In the Development Host window: Help → Toggle Developer Tools → Console. Look for errors during extension activation; any exception in `activate()` will prevent commands from being registered.
+
 ## How It Works
 
-DotAgents utilizes an embedded rules engine using **YAML format** configurations stored in `.agents/rules/{agentId}.yaml`.
+DotAgents utilizes an embedded rules engine using **YAML format** configurations stored in `.agents/.ai/rules/{agentId}.yaml` (bridge-synced rule **content**, e.g. `.md`, lives under `.agents/rules/`).
 
 <img src="./access/folder_example.png" width="30%" alt="DotAgents Folder Structure">
 
@@ -57,7 +72,7 @@ These rules map inbound and outbound file paths to perform reactive, incremental
 
 DotAgents dynamically merges known agents with your custom definitions. If your favorite AI app is not natively supported yet, you can easily integrate it by creating your own rule:
 
-1. Create a new YAML file inside your workspace at `.agents/rules/`. For example, `.agents/rules/my-custom-agent.yaml`.
+1. Create a new YAML file inside your workspace at `.agents/.ai/rules/`. For example, `.agents/.ai/rules/my-custom-agent.yaml`.
 2. Define the agent settings including its `id`, `name`, `paths`, and `mappings` following the standard DotAgents rule format.
 3. Open the Command Palette and run `DotAgents: Add Agent/IDE Manually`.
 4. Your new agent will appear in the list under the dynamically discovered rules. Select it, and DotAgents will immediately synchronize according to your defined mappings.

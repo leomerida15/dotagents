@@ -4,6 +4,8 @@ export interface MappingRuleItemDTO {
 	format?: string;
 	sourceExt?: string;
 	targetExt?: string;
+	extract?: string;
+	adapter?: string;
 }
 
 export interface InstalledRuleDTO {

@@ -2,16 +2,49 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Run Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+			"outFiles": ["${workspaceFolder}/dist/**/*.js"],
+			"preLaunchTask": "build"
+		},
+		{
 			"name": "Extension E2E Tests",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			"args": [
-				"${workspaceFolder}/../supabase-kit",
+				"${workspaceFolder}/e2e/fixtures/newProjectWithCursor",
 				"--extensionDevelopmentPath=${workspaceFolder}",
 				"--extensionTestsPath=${workspaceFolder}/e2e/suite/index"
 			],
 			"outFiles": ["${workspaceFolder}/dist/**/*.js", "${workspaceFolder}/e2e/suite/**/*.js"],
+			"env": {
+				"DOTAGENTS_E2E": "1",
+				"DOTAGENTS_E2E_AGENT": "cursor",
+				"DOTAGENTS_E2E_SUITE": "minimal",
+				"DOTAGENTS_E2E_FIXTURE": "newProjectWithCursor"
+			},
+			"preLaunchTask": null
+		},
+		{
+			"name": "Extension E2E Tests (OpenCode)",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"${workspaceFolder}/e2e/fixtures/newProjectWithOpencode",
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/e2e/suite/index"
+			],
+			"outFiles": ["${workspaceFolder}/dist/**/*.js", "${workspaceFolder}/e2e/suite/**/*.js"],
+			"env": {
+				"DOTAGENTS_E2E": "1",
+				"DOTAGENTS_E2E_AGENT": "opencode",
+				"DOTAGENTS_E2E_SUITE": "full",
+				"DOTAGENTS_E2E_FIXTURE": "newProjectWithOpencode"
+			},
 			"preLaunchTask": null
 		}
 	]

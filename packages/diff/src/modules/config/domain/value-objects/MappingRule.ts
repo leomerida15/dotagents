@@ -70,21 +70,25 @@ export class MappingRule {
 		if (!props.from || !props.to) {
 			throw new Error('Mapping source and target paths are required');
 		}
-		// Format conversion: if one is specified, both must be present
+		// Extension conversion: if sourceExt is set, targetExt must be set (and vice versa for symmetry).
+		// targetExt-only is allowed for formats like json-split that only need output extension.
 		const hasSource = props.sourceExt !== undefined && props.sourceExt !== '';
 		const hasTarget = props.targetExt !== undefined && props.targetExt !== '';
-		if (hasSource !== hasTarget) {
+		if (hasSource && !hasTarget) {
 			throw new Error(
 				'sourceExt and targetExt must both be specified or both omitted for format conversion',
 			);
 		}
-		if (hasSource) {
+		if (hasSource && hasTarget) {
 			if (!props.sourceExt!.startsWith('.')) {
 				throw new Error('sourceExt must start with a dot (e.g. .mdc)');
 			}
 			if (!props.targetExt!.startsWith('.')) {
 				throw new Error('targetExt must start with a dot (e.g. .md)');
 			}
+		}
+		if (hasTarget && !hasSource && !props.targetExt!.startsWith('.')) {
+			throw new Error('targetExt must start with a dot (e.g. .json)');
 		}
 		return new MappingRule(props);
 	}

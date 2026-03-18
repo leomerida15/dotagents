@@ -17,6 +17,8 @@ export class IdeWatcherService implements vscode.Disposable {
 	private readonly onChange?: (uri: vscode.Uri) => void;
 	private readonly onCreate?: (uri: vscode.Uri) => void;
 	private readonly onDelete?: (uri: vscode.Uri) => void;
+	private workspaceRoot: string = '';
+	private activeAgentId: string = '';
 
 	constructor({ onChange, onCreate, onDelete }: IdeWatcherServiceProps = {}) {
 		this.onChange = onChange;
@@ -31,14 +33,25 @@ export class IdeWatcherService implements vscode.Disposable {
 	register(workspaceRoot: string, activeAgentId: string, config: Configuration): void {
 		this.dispose();
 
+		console.log(
+			`[IdeWatcher] Registering watcher for agent: ${activeAgentId}, workspace: ${workspaceRoot}`,
+		);
+		this.workspaceRoot = workspaceRoot;
+		this.activeAgentId = activeAgentId;
+
 		const agent = config.agents.find((a) => a.id === activeAgentId);
-		if (!agent) return;
+		if (!agent) {
+			console.log(`[IdeWatcher] Agent ${activeAgentId} not found in config agents`);
+			return;
+		}
 
 		const known = WORKSPACE_KNOWN_AGENTS.find((a) => a.id === activeAgentId);
 		const pathsToWatch =
 			known != null && known.paths != null && known.paths.length > 0
 				? getSyncSourcePaths(known)
 				: [{ path: agent.sourceRoot.replace(/\/$/, ''), type: 'directory' as const }];
+
+		console.log(`[IdeWatcher] Paths to watch for ${activeAgentId}:`, pathsToWatch);
 
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(workspaceRoot));
 		const base = workspaceFolder ?? workspaceRoot;
@@ -49,6 +62,7 @@ export class IdeWatcherService implements vscode.Disposable {
 			if (rawPath.startsWith('/') || rawPath.startsWith('~')) continue;
 
 			const pattern = p.type === 'file' ? rawPath : `${rawPath}/**`;
+			console.log(`[IdeWatcher] Creating watcher for pattern: ${pattern}`);
 			const watcher = vscode.workspace.createFileSystemWatcher(
 				new vscode.RelativePattern(base, pattern),
 			);
@@ -57,6 +71,9 @@ export class IdeWatcherService implements vscode.Disposable {
 			this.disposables.push(watcher.onDidDelete(this.onDelete ?? noop));
 			this.disposables.push(watcher);
 		}
+		console.log(
+			`[IdeWatcher] Watchers registered successfully, total: ${this.disposables.length / 4}`,
+		);
 	}
 
 	dispose(): void {

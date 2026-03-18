@@ -1,3 +1,6 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 /**
  * Build script: compiles TypeScript and emits declaration files.
  * Invokes the known-agents generation script before compiling the main extension entry point.
@@ -24,6 +27,15 @@ export async function build(): Promise<void> {
 		sourcemap: false,
 		external: ['vscode'],
 	});
+
+	// Bun can inline workspace ESM (e.g. @dotagents/rule dist) that uses import.meta.require.
+	// In CJS that is invalid; replace with require so the extension runs in Node.
+	const outPath = join(process.cwd(), 'dist', 'extension.js');
+	let code = readFileSync(outPath, 'utf-8');
+	if (code.includes('import.meta.require')) {
+		code = code.replace(/import\.meta\.require/g, 'require');
+		writeFileSync(outPath, code, 'utf-8');
+	}
 
 	console.log('Build completed');
 }

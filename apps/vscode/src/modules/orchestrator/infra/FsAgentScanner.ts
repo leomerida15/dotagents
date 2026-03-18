@@ -63,7 +63,8 @@ export class FsAgentScanner implements IAgentScanner {
 			// Ignore if workspace not readable
 		}
 
-		// 2. Detect installed agents in home (fallback if not in workspace)
+		// 2. Detect installed agents in home (fallback if not in workspace): still sync from
+		// workspace-relative marker (e.g. .cursor/) so the project is the sync root, not ~/.cursor.
 		for (const known of WORKSPACE_KNOWN_AGENTS) {
 			if (agentsMap.has(known.id)) continue; // Prefer workspace over home
 			const fullPath = join(this.homeDir, getConfigPath(known));
@@ -74,7 +75,7 @@ export class FsAgentScanner implements IAgentScanner {
 						Agent.create({
 							id: known.id,
 							name: known.id,
-							sourceRoot: fullPath,
+							sourceRoot: getWorkspaceMarker(known),
 							inbound: [],
 							outbound: [],
 						}),
@@ -123,16 +124,12 @@ export class FsAgentScanner implements IAgentScanner {
 				if (!agentsMap.has(includedId)) {
 					const known = WORKSPACE_KNOWN_AGENTS.find((a) => a.id === includedId);
 					if (known) {
-						const fullPath = join(this.homeDir, getConfigPath(known));
-						// Double check existence? Or trust user?
-						// Better to trust user but maybe warn if path missing.
-						// For now, let's try to add it with standard path.
 						agentsMap.set(
 							known.id,
 							Agent.create({
 								id: known.id,
 								name: known.id,
-								sourceRoot: fullPath,
+								sourceRoot: getWorkspaceMarker(known),
 								inbound: [],
 								outbound: [],
 							}),
